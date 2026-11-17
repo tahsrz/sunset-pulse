@@ -12,10 +12,12 @@ import { applyApiRateLimit } from '@/lib/core/apiRateLimit';
 import { applyPublicApiRateLimit } from '@/lib/core/publicApiRateLimit';
 import { errorResponse, successResponse, validationErrorResponse } from '@/lib/core/apiResponse';
 import { discoverListingById } from '@/lib/data/listingDiscovery';
+import { getPublicListingById } from '@/lib/data/listingRepository';
 import { supabaseAdmin } from '@/lib/supabase';
 import { notifyAgentSiteLead } from '@/lib/sites/agentLeadNotification';
 import { getTenantSite } from '@/lib/sites/siteData';
-import { getFirstPartySiteFromHost, getTenantFromHost } from '@/lib/sites/tenantRouting';
+import { getAgentSiteSubdomain, normalizeRootDomain } from '@/lib/sites/siteUrls';
+import { getFirstPartySiteFromHost, getTenantFromHost, normalizeHostname } from '@/lib/sites/tenantRouting';
 import {
   buildPublicGuideLeadIntelligence,
   type PublicGuideBehaviorEvent,
@@ -30,6 +32,7 @@ const leadSchema = z.object({
   site: z.string().trim().min(1).max(80),
   siteName: z.string().trim().max(160).optional(),
   source: z.string().trim().max(80).default('agent_site'),
+  requestKind: z.enum(['inquiry', 'showing']).optional(),
   pagePath: z.string().trim().max(500).optional(),
   name: z.string().trim().min(2, 'Name is required').max(120),
   email: z.string().trim().email('Valid email is required').max(180),
@@ -68,6 +71,11 @@ export async function POST(request: Request) {
     }
 
     const input = validation.data;
+    const isPulseListing = input.source === 'pulse_listing_inquiry';
+
+    if (isPulseListing && !isMainSiteRequest(request)) {
+      return errorResponse('Listing inquiries must originate on Sunset Pulse.', 403);
+    }
 
     if (isJamieRequest && input.consent !== true) {
       return validationErrorResponse({ consent: ['Consent is required before Jamie can send an inquiry.'] });
@@ -88,7 +96,7 @@ export async function POST(request: Request) {
     }
 
     const tenantFromHost = getTenantFromHost(host);
-    const requestedSite = tenantFromHost || input.site;
+    const requestedSite = isPulseListing ? getAgentSiteSubdomain() : tenantFromHost || input.site;
 
     if (isJamieRequest) {
       const rateLimitResponse = await applyPublicApiRateLimit(request, 'jamie-public-handoff', 5);
@@ -107,8 +115,8 @@ export async function POST(request: Request) {
       if (rateLimitResponse) return rateLimitResponse;
     }
 
-    const listing = await resolveVerifiedJamieListing(input.listing);
-    if (input.listing && !listing) {
+    const listing = await resolveVerifiedListing(input.listing, isPulseListing);
+    if ((isPulseListing || input.listing) && !listing) {
       return validationErrorResponse({ listing: ['The listing is not available for a verified public handoff.'] });
     }
 
@@ -141,19 +149,24 @@ export async function POST(request: Request) {
     const source = isJamieRequest ? 'jamie_public_guide' : input.source;
     const siteName = tenantSite.siteName;
     const leadEmail = input.email.toLowerCase();
+    const requestKind = input.requestKind ?? 'inquiry';
+    const message = isPulseListing && requestKind === 'showing' ? `Showing request\n${input.message}` : input.message;
     const idempotencyKey = buildLeadIdempotencyKey(request, {
       agentId,
       email: leadEmail,
-      message: input.message,
+      message,
       listingId: listing?.id || listing?.mlsId || '',
     });
-    const pagePath = isJamieRequest ? getJamieSourcePagePath(request) : input.pagePath || null;
+    const pagePath = isPulseListing && listing?.id
+      ? `/properties/${encodeURIComponent(listing.id)}`
+      : isJamieRequest ? getJamieSourcePagePath(request) : input.pagePath || null;
     const funnelId = randomUUID();
     const metadata = {
       funnelId,
       tenantAgentName: tenantSite.agentProfile.displayName,
       tenantBrokerage: tenantSite.agentProfile.brokerageName,
       submittedAt: new Date().toISOString(),
+      ...(isPulseListing ? { requestKind } : {}),
       ...(isJamieRequest ? {
         publicGuideConsent: {
           granted: true,
@@ -188,7 +201,7 @@ export async function POST(request: Request) {
         email: leadEmail,
         phone: input.phone || null,
         preferred_contact: input.preferredContact,
-        message: input.message,
+        message,
         metadata,
         funnel_id: funnelId,
         idempotency_key: idempotencyKey,
@@ -217,7 +230,7 @@ export async function POST(request: Request) {
         email: leadEmail,
         phone: input.phone || null,
         preferredContact: input.preferredContact,
-        message: input.message,
+        message,
         source,
         pagePath,
         listing,
@@ -300,12 +313,28 @@ async function loadPublicGuideSessionEvents(sessionId: string): Promise<PublicGu
   }
 }
 
-async function resolveVerifiedJamieListing(listing: z.infer<typeof leadSchema>['listing']) {
+function isMainSiteRequest(request: Request) {
+  try {
+    const origin = new URL(request.headers.get('origin') || '');
+    const host = request.headers.get('host') || new URL(request.url).host;
+    if (origin.host !== host.toLowerCase() || request.headers.get('sec-fetch-site') === 'cross-site') return false;
+    const hostname = normalizeHostname(host);
+    const root = normalizeRootDomain(process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN);
+    if (process.env.NODE_ENV !== 'production' && ['localhost', '127.0.0.1'].includes(hostname)) {
+      return origin.protocol === 'http:' || origin.protocol === 'https:';
+    }
+    return origin.protocol === 'https:' && (hostname === root || hostname === `www.${root}`);
+  } catch {
+    return false;
+  }
+}
+
+async function resolveVerifiedListing(listing: z.infer<typeof leadSchema>['listing'], pulseCatalog: boolean) {
   if (!listing) return undefined;
   const requestedId = listing.id || listing.mlsId;
   if (!requestedId) return null;
 
-  const verified = await discoverListingById(requestedId);
+  const verified = pulseCatalog ? await getPublicListingById(requestedId) : await discoverListingById(requestedId);
   if (!verified) return null;
 
   return {

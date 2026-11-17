@@ -146,7 +146,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run Public Site E2E
-        run: npm run test:e2e --workspace=apps/pulse -- tests/jamie-public-guide.spec.ts tests/homepage-responsive.spec.ts --reporter=line
+        run: npm run test:e2e --workspace=apps/pulse -- tests/jamie-public-guide.spec.ts tests/homepage-responsive.spec.ts tests/lead-integrity.spec.ts --reporter=line
 
       - name: Run Listing Editor E2E
         env:

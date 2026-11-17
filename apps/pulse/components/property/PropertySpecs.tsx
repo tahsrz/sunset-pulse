@@ -1,74 +1,41 @@
-import React from 'react';
-import {
-  FaBed,
-  FaBath,
-  FaRulerCombined,
-  FaBus,
-  FaTrailer,
-  FaPlug,
-  FaWater,
-  FaBiohazard,
-} from 'react-icons/fa';
+import { Property } from '@/lib/types';
 
-interface PropertySpecsProps {
-  property: any;
-}
+const number = new Intl.NumberFormat('en-US');
 
-const PropertySpecs: React.FC<PropertySpecsProps> = ({ property }) => {
+export default function PropertySpecs({ property }: { property: Property }) {
   const isRV = property.type === 'RV' || property.type === 'RV Park';
-  const isCommercialSale = property.type === 'Commercial Sale';
+  const isCommercial = property.type === 'Commercial Sale' || property.type === 'Commercial Lease';
+  const specs = isRV
+    ? [
+        { label: 'RV type', value: property.rv_type },
+        { label: 'Length', value: property.rv_length && property.rv_length > 0 ? `${number.format(property.rv_length)} ft` : null },
+        { label: 'Electric hookup', value: property.hookups?.electric },
+        { label: 'Water hookup', value: property.hookups?.water ? 'Available' : null },
+        { label: 'Sewer hookup', value: property.hookups?.sewer ? 'Available' : null },
+      ]
+    : [
+        { label: 'Bedrooms', value: !isCommercial && property.beds && property.beds > 0 ? number.format(property.beds) : null },
+        { label: 'Bathrooms', value: !isCommercial && property.baths && property.baths > 0 ? number.format(property.baths) : null },
+        { label: isCommercial ? 'Building area' : 'Square footage', value: property.square_feet && property.square_feet > 0 ? `${number.format(property.square_feet)} sq ft` : null },
+      ];
+  const knownSpecs = specs.filter(({ value }) => value);
+
+  if (!knownSpecs.length && !property.description?.trim()) return null;
 
   return (
-    <div className='bg-slate-900 border border-white/10 p-8 rounded-2xl shadow-2xl mt-8 transition-all duration-500 hover:border-blue-500/30'>
-      <h3 className='text-xl font-black text-white mb-8 uppercase tracking-[0.2em] italic border-l-4 border-blue-500 pl-4'>Description & Details</h3>
-      
-      {isRV ? (
-        <div className='flex flex-wrap justify-center md:justify-start gap-12 text-blue-400 mb-8'>
-          <div className='flex items-center gap-3'>
-            {property.rv_type?.includes('Class') ? <FaBus className='text-2xl' /> : <FaTrailer className='text-2xl' />}
-            <span className='text-lg font-black italic'>{property.rv_type || 'RV'} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>Type</span></span>
-          </div>
-          <div className='flex items-center gap-3'>
-            <FaRulerCombined className='text-2xl' /> 
-            <span className='text-lg font-black italic'>{property.rv_length || 'N/A'} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>Length (ft)</span></span>
-          </div>
-          <div className='flex items-center gap-3' title='Electric Hookup'>
-            <FaPlug className={`text-2xl ${property.hookups?.electric !== 'None' ? 'text-yellow-500' : 'text-slate-600'}`} />
-            <span className='text-lg font-black italic'>{property.hookups?.electric || 'None'} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>Electric</span></span>
-          </div>
-          <div className='flex items-center gap-3' title='Water Hookup'>
-            <FaWater className={`text-2xl ${property.hookups?.water ? 'text-blue-500' : 'text-slate-600'}`} />
-            <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic'>Water</span>
-          </div>
-          <div className='flex items-center gap-3' title='Sewer Hookup'>
-            <FaBiohazard className={`text-2xl ${property.hookups?.sewer ? 'text-green-600' : 'text-slate-600'}`} />
-            <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic'>Sewer</span>
-          </div>
-        </div>
-      ) : (
-        <div className='flex justify-center md:justify-start gap-12 text-blue-400 mb-8'>
-          {!isCommercialSale && (
-            <>
-              <div className='flex items-center gap-3'>
-                <FaBed className='text-2xl' />
-                <span className='text-lg font-black italic'>{property.beds} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>Beds</span></span>
-              </div>
-              <div className='flex items-center gap-3'>
-                <FaBath className='text-2xl' />
-                <span className='text-lg font-black italic'>{property.baths} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>Baths</span></span>
-              </div>
-            </>
-          )}
-          <div className='flex items-center gap-3'>
-            <FaRulerCombined className='text-2xl' />
-            <span className='text-lg font-black italic'>{property.square_feet} <span className='text-[10px] uppercase tracking-widest text-slate-500 not-italic ml-1'>sqft</span></span>
-          </div>
-        </div>
+    <section aria-labelledby="property-details-heading" className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+      <h2 id="property-details-heading" className="text-xl font-semibold !not-italic !normal-case text-slate-900">About this property</h2>
+      {knownSpecs.length > 0 && (
+        <dl className="flex flex-wrap gap-x-8 gap-y-3 border-b border-slate-200 pb-4">
+          {knownSpecs.map(({ label, value }) => (
+            <div key={label}>
+              <dt className="text-sm text-slate-600">{label}</dt>
+              <dd className="mt-0.5 text-lg font-semibold tabular-nums text-slate-900">{value}</dd>
+            </div>
+          ))}
+        </dl>
       )}
-      
-      <p className='text-slate-400 leading-relaxed font-medium'>{property.description}</p>
-    </div>
+      {property.description?.trim() && <p className="whitespace-pre-line break-words text-sm leading-7 text-slate-700 sm:text-base">{property.description}</p>}
+    </section>
   );
-};
-
-export default PropertySpecs;
+}

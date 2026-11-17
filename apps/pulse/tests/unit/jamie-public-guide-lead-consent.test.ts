@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   eventSelect: vi.fn(),
   from: vi.fn(),
   getTenantSite: vi.fn(),
+  getPublicListingById: vi.fn(),
   insert: vi.fn(),
   notifyAgentSiteLead: vi.fn(),
   hashPublicGuideSessionId: vi.fn(),
@@ -34,11 +35,73 @@ vi.mock('@/lib/ai/publicGuideTelemetry', () => ({
   schedulePublicGuideEvent: mocks.schedulePublicGuideEvent,
 }));
 vi.mock('@/lib/data/listingDiscovery', () => ({ discoverListingById: mocks.discoverListingById }));
+vi.mock('@/lib/data/listingRepository', () => ({ getPublicListingById: mocks.getPublicListingById }));
 vi.mock('@/lib/sites/siteData', () => ({ getTenantSite: mocks.getTenantSite }));
 vi.mock('@/lib/sites/agentLeadNotification', () => ({ notifyAgentSiteLead: mocks.notifyAgentSiteLead }));
 vi.mock('@/lib/supabase', () => ({ supabaseAdmin: { from: mocks.from } }));
 
 import { POST } from '@/app/api/sites/leads/route';
+
+describe('Sunset Pulse listing inquiries', () => {
+  const listingId = '311fe95e-d9be-4cbf-8d0f-5ec2373d2569';
+  const requestBody = {
+    agentId: 'ignored-agent',
+    site: 'ignored-site',
+    source: 'pulse_listing_inquiry',
+    requestKind: 'showing',
+    listing: { id: listingId, name: 'Unverified name' },
+    name: 'Example Visitor',
+    email: 'example@example.com',
+    message: 'Can I tour this property?',
+  };
+
+  function submit(origin: string) {
+    return POST(new Request('https://www.sunsetpulse.app/api/sites/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', host: 'www.sunsetpulse.app', origin },
+      body: JSON.stringify(requestBody),
+    }));
+  }
+
+  it('uses the published Pulse team and catalog record to save requests', async () => {
+    mocks.getTenantSite.mockResolvedValue({
+      isPublished: true,
+      agentId: 'taz-realty-001',
+      site: 'taz',
+      siteName: 'Sunset Pulse',
+      agentProfile: { displayName: 'Pulse agent', brokerageName: 'Pulse Realty' },
+    });
+    mocks.getPublicListingById.mockResolvedValue({
+      id: listingId,
+      name: '817 Stoney Bridge Way',
+      mls_id: '21436577',
+      images: ['/images/properties/817-stoney-bridge-way.png'],
+    });
+    mocks.notifyAgentSiteLead.mockResolvedValue({ status: 'skipped', reason: 'Test', recipients: [] });
+
+    const response = await submit('https://www.sunsetpulse.app');
+    expect(response.status).toBe(201);
+    expect(mocks.getTenantSite).toHaveBeenCalledWith('taz');
+    expect(mocks.getPublicListingById).toHaveBeenCalledWith(listingId);
+    expect(mocks.discoverListingById).not.toHaveBeenCalled();
+    expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({
+      agent_id: 'taz-realty-001',
+      listing_id: listingId,
+      listing_mls_id: '21436577',
+      listing_name: '817 Stoney Bridge Way',
+      page_path: `/properties/${listingId}`,
+      message: 'Showing request\nCan I tour this property?',
+      metadata: expect.objectContaining({ requestKind: 'showing' }),
+    }));
+  });
+
+  it('rejects the same request from an unrelated origin before accessing the catalog', async () => {
+    const response = await submit('https://example.com');
+    expect(response.status).toBe(403);
+    expect(mocks.getTenantSite).not.toHaveBeenCalled();
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+});
 
 const guideLead = {
   agentId: 'agent-1',

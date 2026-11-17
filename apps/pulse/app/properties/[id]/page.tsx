@@ -1,55 +1,34 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { fetchProperty } from '@/lib/core/requests';
-import PropertyHeaderImage from '@/components/PropertyHeaderImage';
 import PropertyDetails from '@/components/PropertyDetails';
-import PropertyImages from '@/components/PropertyImages';
-import BookmarkButton from '@/components/BookmarkButton';
-import BookingForm from '@/components/BookingForm';
-import PropertySidebarForms from '@/components/property/PropertySidebarForms';
 import JamieChat from '@/components/JamieChat';
-import ShareButtons from '@/components/ShareButtons';
-import DraftOfferButton from '@/components/contracts/DraftOfferButton';
-import MarketIntelligence from '@/components/property/MarketIntelligence';
-import YieldIntelligenceCard from '@/components/property/YieldIntelligenceCard';
-import RecommendedProperties from '@/components/property/RecommendedProperties';
 import Spinner from '@/components/Spinner';
-import { FaArrowLeft } from 'react-icons/fa';
-import { Property } from '@/lib/types';
+import type { Property } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
 import { useLocalListing } from '@/lib/powersync/useLocalListings';
 import { useSunsetPowerSync } from '@/lib/powersync/PowerSyncProvider';
 import { recordLocalPropertyView } from '@/lib/powersync/mutations';
 import VisitorPropertyViewTracker from '@/components/property/VisitorPropertyViewTracker';
 
-// --- Interfaces for Type Safety ---
-interface RentData {
-  status: string;
-  rentEstimate?: number;
-  rentRangeLow?: number;
-  rentRangeHigh?: number;
-  [key: string]: any;
-}
-
-const PropertyPage: React.FC = () => {
-  const params = useParams();
-  const id = params?.id as string;
+export default function PropertyPage() {
+  const id = useParams<{ id: string }>()?.id;
   const { user } = useAuth();
   const { listing: localListing, enabled: localEnabled } = useLocalListing(id || null);
   const { database: localDatabase } = useSunsetPowerSync();
-
-  const [property, setProperty] = useState<Property | null>(null);
-  const [rentData, setRentData] = useState<RentData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loaded, setLoaded] = useState<{ id: string; property: Property | null }>();
 
   useEffect(() => {
-    if (!localEnabled || !localListing || property) return;
-    setProperty(localListing as Property);
-    setLoading(false);
-  }, [localEnabled, localListing, property]);
+    if (!id) return;
+    let cancelled = false;
+    fetchProperty(id).then(
+      (property) => { if (!cancelled) setLoaded({ id, property: property || null }); },
+      () => { if (!cancelled) setLoaded({ id, property: null }); },
+    );
+    return () => { cancelled = true; };
+  }, [id]);
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_RECENT_PROPERTY_VIEWS_ENABLED === 'false') return;
@@ -59,104 +38,20 @@ const PropertyPage: React.FC = () => {
     });
   }, [id, localDatabase, localEnabled, user?.id]);
 
-  useEffect(() => {
-    const fetchPropertyData = async () => {
-      if (!id) return;
-      try {
-        const propertyData = await fetchProperty(id);
-        setProperty(propertyData as Property);
-
-        if (propertyData && (propertyData as Property).type !== 'Commercial Sale') {
-          try {
-            const rentRes = await fetch(`/api/properties/${id}/rent`);
-            if (rentRes.ok) {
-              const rent = await rentRes.json();
-              setRentData(rent as RentData);
-            }
-          } catch (rentError) {
-            console.error('Market analysis failed:', rentError);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching property:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (property === null) {
-      fetchPropertyData();
-    }
-  }, [id, property, user]);
-
-  if (!property && !loading) {
-    return (
-      <h1 className='text-center text-2xl font-bold mt-10'>
-        Property Not Found
-      </h1>
-    );
+  const property = (loaded?.id === id ? loaded?.property : null)
+    ?? (localEnabled && localListing ? localListing as Property : null);
+  if (!property) {
+    return id && loaded?.id !== id
+      ? <Spinner loading />
+      : <h1 className="mt-10 text-center text-2xl font-bold">Property Not Found</h1>;
   }
 
-  // Determine if it's a rental/RV or a Sale/Standard property for form logic
-  const isShortTerm = property?.type === 'RV' || property?.type === 'RV Park';
-
-  // Combine property and rent data for Jamie
-  const jamieData = property ? { ...property, rentData } : null;
-  const county = property?.location?.county || (property as (Property & { county?: string }) | null)?.county;
-
+  const propertyId = property._id || id;
   return (
     <>
-      {loading && <Spinner loading={loading} />}
-      {!loading && property && (
-        <>
-          <VisitorPropertyViewTracker propertyId={property._id || id} />
-          <PropertyHeaderImage image={property.images[0]} />
-          <section>
-            <div className='container m-auto py-6 px-6'>
-              <Link
-                href='/properties'
-                className='text-blue-500 hover:text-blue-600 flex items-center transition-all hover:-translate-x-1'
-              >
-                <FaArrowLeft className='mr-2' /> Back to Properties
-              </Link>
-            </div>
-          </section>
-
-          <section className='bg-slate-900/50 border-y border-white/5'>
-            <div className='container m-auto py-10 px-6'>
-              <div className='grid grid-cols-1 md:grid-cols-[70%_30%] w-full gap-6'>
-                <PropertyDetails
-                  property={property}
-                  marketIntelligenceSlot={
-                    <>
-                      {rentData && <MarketIntelligence rentData={rentData} />}
-                      <YieldIntelligenceCard county={county} />
-                    </>
-                  }
-                />
-                <aside className='space-y-4'>
-                  {!isShortTerm && <DraftOfferButton property={property} />}
-                  <BookmarkButton property={property} />
-                  <ShareButtons property={property} />
-                  
-                  {/* Action Forms based on Property Intel Type */}
-                  {isShortTerm ? (
-                    <BookingForm property={property} />
-                  ) : (
-                    <PropertySidebarForms propertyId={property._id} propertyName={property.name} />
-                  )}
-
-                  <RecommendedProperties currentPropertyId={property._id} type={property.type} />
-                </aside>
-              </div>
-            </div>
-          </section>
-          <PropertyImages images={property.images} />
-          <JamieChat propertyData={jamieData} />
-        </>
-      )}
+      <VisitorPropertyViewTracker propertyId={propertyId} />
+      <PropertyDetails property={property} propertyId={propertyId} />
+      <JamieChat propertyData={property} />
     </>
   );
-};
-
-export default PropertyPage;
+}

@@ -1,111 +1,22 @@
-import React, { Suspense } from 'react';
-import Link from 'next/link';
 import { fetchProperty } from '@/lib/core/requests';
-import PropertyHeaderImage from '@/components/PropertyHeaderImage';
 import PropertyDetails from '@/components/PropertyDetails';
-import PropertyImages from '@/components/PropertyImages';
-import BookmarkButton from '@/components/BookmarkButton';
-import PropertySidebarForms from '@/components/property/PropertySidebarForms';
-import PropertyVerification from '@/components/VerificationStep';
 import JamieChat from '@/components/JamieChat';
-import ShareButtons from '@/components/ShareButtons';
-import DraftOfferButton from '@/components/contracts/DraftOfferButton';
-import MarketIntelligencePocket from '@/components/property/MarketIntelligencePocket';
-import YieldIntelligenceCard from '@/components/property/YieldIntelligenceCard';
-import { FaArrowLeft, FaChartLine } from 'react-icons/fa';
 import VisitorPropertyViewTracker from '@/components/property/VisitorPropertyViewTracker';
 
-interface ListingPageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default async function ListingPage({ params }: ListingPageProps) {
+export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const property = await fetchProperty(id);
 
   if (!property) {
-    return (
-      <h1 className='text-center text-2xl font-bold mt-10 text-slate-800'>
-        Listing Not Found
-      </h1>
-    );
+    return <h1 className="mt-10 text-center text-2xl font-bold">Listing Not Found</h1>;
   }
 
-  const address = `${property.location.street}, ${property.location.city}, ${property.location.state} ${property.location.zipcode}`;
-  const county = property.location?.county || (property as { county?: string }).county;
-
-
-  // For now, JamieChat is a client component, so it won't wait for rentData if we don't pass it.
-  const jamieData = { ...property };
-
+  const propertyId = property._id || id;
   return (
-    <main className='bg-slate-50 min-h-screen pb-20'>
-      <VisitorPropertyViewTracker propertyId={property._id || id} />
-      <PropertyHeaderImage image={property.images[0]} />
-
-      <section className='bg-white border-b border-slate-200'>
-        <div className='container m-auto py-6 px-6 flex justify-between items-center'>
-          <Link
-            href='/properties'
-            className='text-blue-600 hover:text-blue-700 flex items-center font-bold text-sm'
-          >
-            <FaArrowLeft className='mr-2' /> Back to All Listings
-          </Link>
-          <div className='flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100'>
-            <FaChartLine className='text-green-600' />
-            <span className='text-[10px] font-black uppercase text-green-700 tracking-widest'>Listing Active</span>
-          </div>
-        </div>
-      </section>
-
-      <div className='container m-auto py-10 px-6'>
-        <div className='grid grid-cols-1 md:grid-cols-70/30 w-full gap-8'>
-          <div>
-            <PropertyDetails
-              property={property}
-              marketIntelligenceSlot={
-                <Suspense fallback={
-                  <div className="bg-slate-900 border border-blue-500/10 p-8 rounded-2xl mt-8 animate-pulse">
-                    <div className="h-6 w-48 bg-slate-800 rounded mb-4" />
-                    <div className="grid grid-cols-3 gap-6">
-                      <div className="h-20 bg-slate-800/50 rounded-xl" />
-                      <div className="h-20 bg-slate-800/50 rounded-xl" />
-                      <div className="h-20 bg-slate-800/50 rounded-xl" />
-                    </div>
-                  </div>
-                }>
-                  <MarketIntelligencePocket address={address} />
-                  <YieldIntelligenceCard county={county} />
-                </Suspense>
-              }
-            />
-            <div className='mt-10'>
-              <h3 className='text-xl font-bold mb-6 text-slate-800 border-b pb-4'>Property Gallery</h3>
-              <PropertyImages images={property.images} />
-            </div>
-          </div>
-
-          <aside className='space-y-6'>
-            <div className='bg-white p-6 rounded-2xl shadow-sm border border-slate-100'>
-              <h4 className='text-xs font-black uppercase text-slate-400 tracking-widest mb-6'>Agent Controls</h4>
-              <div className='space-y-4'>
-                <DraftOfferButton property={property} />
-                <BookmarkButton property={property} />
-                <ShareButtons property={property} />
-              </div>
-            </div>
-
-            <PropertyVerification>
-              <div className='bg-white p-6 rounded-2xl shadow-sm border border-slate-100'>
-                <h4 className='text-xs font-black uppercase text-slate-400 tracking-widest mb-6'>Direct Inquiry</h4>
-                <PropertySidebarForms propertyId={property._id} propertyName={property.name} />
-              </div>
-            </PropertyVerification>
-          </aside>
-        </div>
-      </div>
-
-      <JamieChat propertyData={jamieData} />
-    </main>
+    <>
+      <VisitorPropertyViewTracker propertyId={propertyId} />
+      <PropertyDetails property={property} propertyId={propertyId} />
+      <JamieChat propertyData={property} />
+    </>
   );
 }

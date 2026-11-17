@@ -1,52 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import LeadCaptureForm from '@/components/LeadCaptureForm';
 import TourRequestForm from './TourRequestForm';
 
-interface PropertySidebarFormsProps {
-  propertyId: string;
-  propertyName: string;
-}
+const requestTypes = [
+  { value: 'inquiry', label: 'Ask a question' },
+  { value: 'showing', label: 'Request a showing' },
+] as const;
 
-const PropertySidebarForms: React.FC<PropertySidebarFormsProps> = ({ propertyId, propertyName }) => {
-  const [formMode, setFormMode] = useState<'inquiry' | 'tour'>('inquiry');
+export default function PropertySidebarForms({ propertyId, propertyName }: { propertyId: string; propertyName: string }) {
+  const [kind, setKind] = useState<'inquiry' | 'showing'>('inquiry');
+  const useTourCalendar = kind === 'showing' && /^[a-f0-9]{24}$/i.test(propertyId);
 
   return (
-    <div className="space-y-4">
-      {/* Premium Form Mode Tabs */}
-      <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl border border-white/5">
-        <button
-          onClick={() => setFormMode('inquiry')}
-          className={`py-3 text-[10px] font-black uppercase tracking-[0.15em] rounded-lg transition-all ${
-            formMode === 'inquiry'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 border border-blue-400/20'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
-          }`}
-        >
-          Quick Inquiry
-        </button>
-        <button
-          onClick={() => setFormMode('tour')}
-          className={`py-3 text-[10px] font-black uppercase tracking-[0.15em] rounded-lg transition-all ${
-            formMode === 'tour'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 border border-blue-400/20'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
-          }`}
-        >
-          Schedule Showing
-        </button>
+    <section aria-labelledby="listing-contact-heading" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <h2 id="listing-contact-heading" className="text-xl font-semibold !not-italic !normal-case text-slate-900">Request information</h2>
+      <p className="mt-1 text-sm leading-6 text-slate-600">Contact a Pulse agent about {propertyName}.</p>
+      <div role="group" aria-label="Request type" className="mb-4 mt-4 grid grid-cols-2 gap-1 rounded-lg bg-[#eef4f5] p-1">
+        {requestTypes.map(({ value, label }) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={kind === value}
+            onClick={() => setKind(value)}
+            className="min-h-10 rounded-md px-2 py-1.5 text-sm font-semibold text-slate-600 hover:text-[#245757] aria-pressed:bg-white aria-pressed:text-[#245757] aria-pressed:shadow-sm"
+          >
+            {label}
+          </button>
+        ))}
       </div>
-
-      <div className="transition-all duration-300">
-        {formMode === 'inquiry' ? (
-          <LeadCaptureForm propertyId={propertyId} propertyName={propertyName} />
-        ) : (
-          <TourRequestForm propertyId={propertyId} propertyName={propertyName} />
-        )}
-      </div>
-    </div>
+      {useTourCalendar ? (
+        <TourRequestForm propertyId={propertyId} propertyName={propertyName} />
+      ) : (
+        <LeadCaptureForm key={kind} propertyId={propertyId} propertyName={propertyName} kind={kind} />
+      )}
+    </section>
   );
-};
-
-export default PropertySidebarForms;
+}

@@ -1,123 +1,72 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-/**
- * E2E Test for Lead Data Integrity
- * Verifies unique constraint and validation logic for real estate leads.
- */
-test.describe('Lead Data Integrity Flow', () => {
-  test.setTimeout(60000); // 60s for the whole suite
-  
-  test.beforeEach(async ({ page }) => {
-    page.on('console', msg => {
-      console.log(`BROWSER [${msg.type().toUpperCase()}]: ${msg.text()}`);
+const address = '11250 West Lake Road';
+
+test.beforeEach(async ({ page }) => {
+  await page.goto('/properties/21436749', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: address, exact: true })).toBeVisible({ timeout: 20000 });
+});
+
+test('listing details show the asking price and analysis without empty panels', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  const layout = page.getByRole('main').filter({ has: page.getByRole('heading', { name: address }) });
+  await expect(layout.getByText('$175,000', { exact: true }).first()).toBeVisible();
+  await expect(layout.getByRole('heading', { name: 'About this property' })).toBeVisible();
+  await expect(layout.getByText('1,600 sq ft', { exact: true })).toBeVisible();
+  const analysis = layout.getByRole('region', { name: 'Property analysis' });
+  await expect(analysis.getByText('$109.38', { exact: true })).toBeVisible();
+  await expect(analysis.getByText('21436749', { exact: true })).toBeVisible();
+  await analysis.getByText('How this is calculated', { exact: true }).click();
+  await expect(analysis.getByText('Asking price divided by the square footage reported in the listing.')).toBeVisible();
+  await expect(analysis.getByRole('link', { name: 'View on Google Maps' })).toHaveAttribute('href', /11250\+West\+Lake\+Road/);
+  await expect(layout.getByText(/^(Nightly|Weekly|Monthly)$/i)).toHaveCount(0);
+  await expect(layout.getByText(/Sunset Render Engine|Interactive Property Analysis/)).toHaveCount(0);
+  await expect(layout.getByRole('heading', { name: /amenities/i })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('listing inquiries keep the question on errors and submit the correct listing context', async ({ page }) => {
+  let attempts = 0;
+  await page.route('**/api/sites/leads', async (route) => {
+    attempts += 1;
+    expect(route.request().postDataJSON()).toMatchObject({
+      source: 'pulse_listing_inquiry',
+      requestKind: 'inquiry',
+      listing: { id: '21436749' },
+      name: 'Example Visitor',
+      email: 'example@example.com',
+      message: 'Is this still available?',
     });
-
-    await page.goto('/properties');
-    await page.waitForLoadState('networkidle');
-    
-    // Select the first property card and navigate to its detail page
-    const firstCard = page.locator('.property-card').first();
-    await expect(firstCard).toBeVisible({ timeout: 20000 });
-    
-    const detailsLink = firstCard.getByRole('link', { name: 'Details' });
-    await detailsLink.click();
-    
-    // Wait for the detail page to load
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(12000); // Wait for Next.js compilation/hydration to completely settle down
-    
-    // Check if verification wall is present
-    const verificationInput = page.locator('input[placeholder*="Type your answer"]');
-    if (await verificationInput.isVisible()) {
-      await verificationInput.fill('human');
-      await page.click('button:has-text("Confirm")');
-      await page.waitForLoadState('networkidle');
-    }
-    
-    // Attempt to find ANY form heading to confirm we are on a detail page
-    try {
-      const formHeading = page.locator('h3:has-text("Information"), h3:has-text("property"), h3:has-text("Deployment"), h3:has-text("Inquiry")').first();
-      await expect(formHeading).toBeVisible({ timeout: 30000 });
-    } catch (e) {
-      console.log('DEBUG: Detail page content dump:', await page.content());
-      throw e;
-    }
-
-    // Minimize JamieChat if it is open to avoid element pointer interception on the form
-    const minimizeBtn = page.locator('button[aria-label="Minimize Chat"]').first();
-    if (await minimizeBtn.isVisible()) {
-      await minimizeBtn.click({ force: true });
-    }
+    return attempts === 1
+      ? route.fulfill({ status: 503, json: { message: 'Please try again.' } })
+      : route.fulfill({ status: 201, json: { data: { accepted: true } } });
   });
 
-  test('should prevent duplicate lead submissions with the same email', async ({ page }) => {
-    // Re-verify if needed (e.g. after reload)
-    const handleVerification = async () => {
-      const verificationInput = page.locator('input[placeholder*="Type your answer"]');
-      if (await verificationInput.isVisible()) {
-        await verificationInput.fill('human');
-        await page.click('button:has-text("Confirm")');
-        await page.waitForLoadState('networkidle');
-      }
-    };
+  const form = page.getByRole('region', { name: 'Request information' });
+  await form.getByLabel('Full name').fill('Example Visitor');
+  await form.getByLabel('Email').fill('example@example.com');
+  await form.getByLabel('Your question').fill('Is this still available?');
+  await form.getByRole('button', { name: 'Send inquiry' }).click();
+  await expect(form.getByRole('alert')).toHaveText('Please try again.');
+  await expect(form.getByLabel('Your question')).toHaveValue('Is this still available?');
+  await form.getByRole('button', { name: 'Send inquiry' }).click();
+  await expect(form.getByRole('status')).toContainText('Inquiry received');
+  expect(attempts).toBe(2);
+});
 
-    // Ensure we are interacting with the correct form fields
-    const nameInput = page.locator('input[name="name"], input[name="leadName"], input[name="userName"]').first();
-    const emailInput = page.locator('input[name="email"], input[name="leadEmail"], input[name="userEmail"]').first();
-    const submitButton = page.locator('form button[type="submit"], button:has-text("Send Inquiry")').first();
-
-    console.log("DIAGNOSTIC: nameInput count:", await nameInput.count());
-    console.log("DIAGNOSTIC: emailInput count:", await emailInput.count());
-    console.log("DIAGNOSTIC: submitButton count:", await submitButton.count());
-    if (await submitButton.count() > 0) {
-      console.log("DIAGNOSTIC: submitButton outerHTML:", await submitButton.evaluate(el => el.outerHTML));
-    }
-
-    const testEmail = `test_lead_${Date.now()}@example.com`;
-    
-    // First Submission
-    await nameInput.fill('Test Lead');
-    await emailInput.fill(testEmail);
-    console.log("DIAGNOSTIC: Inputs filled. Clicking submit button...");
-    await submitButton.evaluate(el => (el as HTMLButtonElement).click());
-    console.log("DIAGNOSTIC: Submit button clicked.");
-    
-    await expect(page.locator('text=/Success|Inquiry received|Request sent/i').first()).toBeVisible({ timeout: 20000 });
-
-    // Second Submission (Duplicate Email)
-    await page.reload();
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(12000); // Wait for Next.js compilation/hydration to completely settle down
-    await handleVerification();
-    
-    await nameInput.fill('Duplicate Lead');
-    await emailInput.fill(testEmail);
-    await submitButton.evaluate(el => (el as HTMLButtonElement).click());
-
-    // Assert error message for duplicate constraint
-    await expect(page.locator('text=/already registered|exists|duplicate/i')).toBeVisible({ timeout: 20000 });
+test('a visitor can request a showing for a catalog listing', async ({ page }) => {
+  await page.route('**/api/sites/leads', async (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({
+      source: 'pulse_listing_inquiry',
+      requestKind: 'showing',
+      listing: { id: '21436749' },
+    });
+    return route.fulfill({ status: 201, json: { data: { accepted: true } } });
   });
-
-  test('should validate budget inputs for investment leads', async ({ page }) => {
-    const nameInput = page.locator('input[name="name"], input[name="leadName"], input[name="userName"]').first();
-    const emailInput = page.locator('input[name="email"], input[name="leadEmail"], input[name="userEmail"]').first();
-    const budgetInput = page.locator('input[name="budget"]').first();
-    const submitButton = page.locator('form button[type="submit"], button:has-text("Send Inquiry")').first();
-
-    console.log("DIAGNOSTIC TEST 2: nameInput count:", await nameInput.count());
-    console.log("DIAGNOSTIC TEST 2: emailInput count:", await emailInput.count());
-    console.log("DIAGNOSTIC TEST 2: budgetInput count:", await budgetInput.count());
-    console.log("DIAGNOSTIC TEST 2: submitButton count:", await submitButton.count());
-
-    await nameInput.fill('Budget Test');
-    await emailInput.fill(`budget_${Date.now()}@example.com`);
-    
-    // Test negative budget
-    await budgetInput.fill('-5000');
-    console.log("DIAGNOSTIC TEST 2: Inputs filled. Clicking submit button...");
-    await submitButton.evaluate(el => (el as HTMLButtonElement).click());
-    console.log("DIAGNOSTIC TEST 2: Submit button clicked.");
-    
-    await expect(page.locator('text=/must be positive|invalid budget/i')).toBeVisible();
-  });
+  const form = page.getByRole('region', { name: 'Request information' });
+  await form.getByRole('button', { name: 'Request a showing' }).click();
+  await form.getByLabel('Full name').fill('Example Visitor');
+  await form.getByLabel('Email').fill('example@example.com');
+  await form.getByRole('button', { name: 'Send showing request' }).click();
+  await expect(form.getByRole('status')).toContainText('Showing request sent');
 });
