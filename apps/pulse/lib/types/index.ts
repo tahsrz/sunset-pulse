@@ -1,3 +1,5 @@
+import type { PublicListingFacts } from '@/lib/data/publicListingContract';
+
 export interface CartItem {
   _id?: string;
   id?: string;
@@ -60,6 +62,7 @@ export interface Property {
   mls_number?: string;
   mls_id?: string;
   listing_status?: string;
+  facts?: PublicListingFacts;
 }
 export interface Lead {
   _id: string;

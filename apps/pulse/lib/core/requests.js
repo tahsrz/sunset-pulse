@@ -35,7 +35,7 @@ async function fetchProperty(id) {
   const isClient = typeof window !== 'undefined';
   
   if (isClient) {
-    return await persistenceEngine.resolve(`ASSET_${id}`, async () => {
+    return await persistenceEngine.resolve(`ASSET_DETAIL_${id}`, async () => {
       const fetchUrl = `/api/properties/${id}`;
       const res = await fetch(fetchUrl);
       if (!res.ok) return null;
