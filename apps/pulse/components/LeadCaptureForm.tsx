@@ -1,269 +1,96 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { LeadSchema } from '@/lib/core/validation';
-import { toast } from 'react-toastify';
-import { FaUser, FaEnvelope, FaPhone, FaPaperPlane, FaSync, FaDollarSign, FaCalendarAlt, FaStar } from 'react-icons/fa';
-import { z } from 'zod';
-import LeadCaptureSuccess from './lead-capture/LeadCaptureSuccess';
-import LeadIntelligenceBar from './lead-capture/LeadIntelligenceBar';
+import { useState, type FormEvent } from 'react';
+import { CheckCircle2 } from 'lucide-react';
+import { FALLBACK_AGENT_ID } from '@/lib/sites/agentConfig';
+import { getAgentSiteSubdomain } from '@/lib/sites/siteUrls';
 
-// Derive the form data type from the ZOD schema
-type LeadFormInput = z.input<typeof LeadSchema>;
-type LeadFormData = z.output<typeof LeadSchema>;
+const fieldClass = 'min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus:border-[#275e60] focus:ring-2 focus:ring-[#275e60]/30';
 
-interface LeadCaptureFormProps {
+export default function LeadCaptureForm({ propertyId, propertyName, kind = 'inquiry' }: {
   propertyId: string;
   propertyName: string;
-}
+  kind?: 'inquiry' | 'showing';
+}) {
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [error, setError] = useState('');
+  const isShowing = kind === 'showing';
 
-const LeadCaptureForm: React.FC<LeadCaptureFormProps> = ({ propertyId, propertyName }) => {
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors, isSubmitting },
-    reset,
-  } = useForm<LeadFormInput, undefined, LeadFormData>({
-    resolver: zodResolver(LeadSchema),
-    defaultValues: {
-      property: propertyId,
-      idxViewed: true,
-      probability: 50,
-      status: 'new',
-      budget: 0,
-      timeframe: 'unknown',
-      tourRequested: false,
-    },
-  });
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (status === 'sending') return;
+    setStatus('sending');
+    setError('');
+    const form = new FormData(event.currentTarget);
+    const question = String(form.get('message') || '').trim();
 
-  const watchAll = watch();
-  console.error('[DIAGNOSTIC_RENDER]: values =', JSON.stringify(watchAll), 'errors =', JSON.stringify(Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, (v as any)?.message]))));
-  
-  const calculateLiveProbability = (): number => {
-    let score = 30;
-    if (watchAll.name && watchAll.name.length > 2) score += 10;
-    if (watchAll.email && watchAll.email.includes('@')) score += 10;
-    if (watchAll.phone && watchAll.phone.length > 5) score += 15;
-    const budget = typeof watchAll.budget === 'number' || typeof watchAll.budget === 'string' ? Number(watchAll.budget) : 0;
-    if (budget > 0) score += 5;
-    if (watchAll.timeframe && watchAll.timeframe !== 'unknown') score += 10;
-    if (watchAll.tourRequested) score += 20;
-    return Math.min(score, 99);
-  };
-
-  const liveProb = calculateLiveProbability();
-
-  const onSubmit = async (data: LeadFormData) => {
-    console.error('[LEAD_SUBMIT_DEBUG]: Submitting lead data:', JSON.stringify(data));
-    // Convert budget to number
-    data.budget = Number(data.budget);
     try {
-      console.error('[LEAD_SUBMIT_DEBUG]: Fetching /api/leads...');
-      const res = await fetch('/api/leads', {
+      const response = await fetch('/api/sites/leads', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: FALLBACK_AGENT_ID,
+          site: getAgentSiteSubdomain(),
+          source: 'pulse_listing_inquiry',
+          requestKind: kind,
+          listing: { id: propertyId },
+          name: String(form.get('name') || '').trim(),
+          email: String(form.get('email') || '').trim(),
+          phone: String(form.get('phone') || '').trim(),
+          preferredContact: 'email',
+          message: question || (isShowing ? 'I would like to request a showing.' : 'I would like more information about this listing.'),
+          company: String(form.get('company') || ''),
+        }),
       });
-
-      console.error('[LEAD_SUBMIT_DEBUG]: API Response Status:', res.status);
-
-      if (res.status === 201) {
-        console.error('[LEAD_SUBMIT_DEBUG]: Submission successful!');
-        toast.success('Inquiry received! We will contact you shortly.');
-        setIsSubmitted(true);
-        reset();
-      } else {
-        const errorData = await res.json();
-        console.error('[LEAD_SUBMIT_DEBUG]: API Error Data:', JSON.stringify(errorData));
-        toast.error(errorData.message || 'Failed to send inquiry');
+      const result = await response.json().catch(() => null);
+      if (!response.ok || result?.data?.accepted !== true) {
+        throw new Error(result?.message || 'Your request could not be sent. Please try again.');
       }
+      setStatus('sent');
     } catch (error) {
-      console.error('[LEAD_SUBMIT_DEBUG]: Network/Submission Error:', error);
-      toast.error('Something went wrong. Please try again.');
+      setError(error instanceof Error ? error.message : 'Your request could not be sent. Please try again.');
+      setStatus('idle');
     }
-  };
-
-  if (isSubmitted) {
-    return <LeadCaptureSuccess propertyName={propertyName} />;
   }
 
-  if (Object.keys(errors).length > 0) {
-    console.error('[LEAD_FORM_VALIDATION_ERRORS]:', JSON.stringify(Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, (v as any)?.message]))));
+  if (status === 'sent') {
+    return (
+      <div role="status" className="rounded-xl border border-[#c4dddd] bg-[#edf8f7] px-4 py-5 text-sm text-slate-700">
+        <p className="flex items-center gap-2 font-semibold text-[#245757]">
+          <CheckCircle2 size={18} aria-hidden="true" /> {isShowing ? 'Showing request sent' : 'Inquiry received'}
+        </p>
+        <p className="mt-2 leading-6">A Pulse agent can follow up with you about {propertyName} by email.</p>
+      </div>
+    );
   }
 
   return (
-    <div className='group relative bg-slate-900/80 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] overflow-hidden'>
-      <div className='absolute -top-24 -right-24 w-48 h-48 bg-blue-600/10 blur-[100px] rounded-full group-hover:bg-blue-500/20 transition-all duration-700' />
-      
-      <h3 className='relative text-xl font-bold text-white mb-8 uppercase tracking-wider border-l-4 border-blue-500 pl-4'>
-        Request Information
-        <span className='absolute -bottom-2 left-4 w-12 h-0.5 bg-blue-500/50' />
-      </h3>
-      
-      <form onSubmit={handleSubmit(
-        (data) => {
-          console.error('[LEAD_SUBMIT_DIAGNOSTIC_VALID]: calling onSubmit with data:', JSON.stringify(data));
-          onSubmit(data);
-        },
-        (err) => {
-          console.error('[LEAD_SUBMIT_DIAGNOSTIC_INVALID]: validation failed! Errors:', JSON.stringify(Object.fromEntries(Object.entries(err).map(([k, v]) => [k, (v as any)?.message]))));
-        }
-      )} className='relative space-y-6'>
-        <LeadIntelligenceBar probability={liveProb} />
-
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-          <div className='space-y-2'>
-            <label className='block text-[10px] font-bold text-blue-400/70 uppercase tracking-widest ml-1'>Full Name</label>
-            <div className='relative group/input'>
-              <FaUser className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-blue-400 transition-colors' />
-              <input
-                {...register('name')}
-                className={`w-full bg-slate-950/50 border ${errors.name ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-700`}
-                placeholder='Full Name'
-              />
-            </div>
-            {errors.name && <p className='text-red-500 text-[10px] font-bold mt-1 ml-1 animate-pulse'>{(errors.name as any).message}</p>}
-          </div>
-
-          <div className='space-y-2'>
-            <label className='block text-[10px] font-bold text-blue-400/70 uppercase tracking-widest ml-1'>Email Address</label>
-            <div className='relative group/input'>
-              <FaEnvelope className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-blue-400 transition-colors' />
-              <input
-                {...register('email')}
-                className={`w-full bg-slate-950/50 border ${errors.email ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-700`}
-                placeholder='Email'
-              />
-            </div>
-            {errors.email && <p className='text-red-500 text-[10px] font-bold mt-1 ml-1 animate-pulse'>{(errors.email as any).message}</p>}
-          </div>
-        </div>
-
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-          <div className='space-y-2'>
-            <label className='block text-[10px] font-bold text-blue-400/70 uppercase tracking-widest ml-1'>Phone</label>
-            <div className='relative group/input'>
-              <FaPhone className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-blue-400 transition-colors' />
-              <input
-                {...register('phone')}
-                className='w-full bg-slate-950/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-700'
-                placeholder='Phone'
-              />
-            </div>
-          </div>
-
-          <div className='space-y-2'>
-            <label className='block text-[10px] font-bold text-blue-400/70 uppercase tracking-widest ml-1'>Max Budget ($)</label>
-            <div className='relative group/input'>
-              <FaDollarSign className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-blue-400 transition-colors' />
-              <input
-                type='number'
-                {...register('budget')}
-                className={`w-full bg-slate-950/50 border ${errors.budget ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 placeholder:text-slate-700`}
-                placeholder='Budget'
-              />
-            </div>
-            {errors.budget && <p className='text-red-500 text-[10px] font-bold mt-1 ml-1 animate-pulse'>{(errors.budget as any).message}</p>}
-          </div>
-
-          <div className='space-y-2'>
-            <label className='block text-[10px] font-bold text-blue-400/70 uppercase tracking-widest ml-1'>Timeframe</label>
-            <div className='relative group/input'>
-              <FaCalendarAlt className='absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-blue-400 transition-colors' />
-              <select
-                {...register('timeframe')}
-                className='w-full bg-slate-950/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 appearance-none'
-              >
-                <option value='unknown'>Select Timeframe</option>
-                <option value='immediate'>Immediate</option>
-                <option value='1-3 months'>1-3 Months</option>
-                <option value='3-6 months'>3-6 Months</option>
-                <option value='6+ months'>6+ Months</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className='flex items-center gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl group/vip cursor-pointer transition-all hover:bg-blue-500/10'>
-          <input
-            type='checkbox'
-            {...register('tourRequested')}
-            className='w-5 h-5 rounded border-white/10 bg-slate-950/50 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900 transition-all cursor-pointer'
-          />
-          <div className='flex-1'>
-            <div className='flex items-center gap-2'>
-              <FaStar className='text-amber-400 text-xs animate-pulse' />
-              <span className='text-[10px] font-black text-white uppercase tracking-widest'>Request Priority Tour</span>
-            </div>
-            <p className='text-[8px] text-blue-400/60 uppercase font-bold mt-0.5'>Connect directly with a lead agent for faster scheduling.</p>
-          </div>
-        </div>
-
-        {/* Privacy & Consent Layer */}
-        <div className='space-y-3 px-1'>
-          <div className='flex items-start gap-3'>
-            <input
-              type='checkbox'
-              {...register('marketingConsent')}
-              className='mt-1 w-4 h-4 rounded border-white/10 bg-slate-950/50 text-blue-500 focus:ring-blue-500 transition-all cursor-pointer'
-            />
-            <p className='text-[7px] text-slate-500 uppercase font-bold leading-relaxed'>
-              I consent to receive automated property alerts and market updates via email/SMS.
-              I understand I can opt-out at any time.
-            </p>
-          </div>
-          <div className='flex items-start gap-3'>
-            <input
-              type='checkbox'
-              {...register('crossPlatformConsent')}
-              className='mt-1 w-4 h-4 rounded border-white/10 bg-slate-950/50 text-blue-500 focus:ring-blue-500 transition-all cursor-pointer'
-            />
-            <p className='text-[7px] text-slate-500 uppercase font-bold leading-relaxed'>
-              Cross-platform personalization: I agree to let Jamie AI use my real estate search intent to provide relevant local recommendations and offers.
-            </p>
-          </div>
-        </div>
-
-        <button
-          type='submit'
-          disabled={isSubmitting}
-          onClick={() => {
-            console.error('[DIAGNOSTIC_CLICK]: Submit button element clicked!');
-          }}
-          className='group/btn relative w-full overflow-hidden bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white font-bold py-4 rounded-xl transition-all duration-300 active:scale-[0.98] uppercase tracking-widest text-xs shadow-[0_10px_20px_rgba(37,99,235,0.2)]'
-        >
-          <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite] transition-transform' />
-          <span className='flex items-center justify-center gap-3'>
-            {isSubmitting ? (
-              <FaSync className='animate-spin' />
-            ) : (
-              <>
-                <FaPaperPlane className='group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform' /> 
-                Send Inquiry
-              </>
-            )}
-          </span>
-        </button>
-        
-        <div className='pt-2'>
-          <div className='flex items-center gap-2 justify-center opacity-40 group-hover:opacity-100 transition-opacity duration-500'>
-            <div className='h-[1px] w-8 bg-blue-500' />
-            <p className='text-[8px] font-bold text-blue-400 uppercase tracking-widest'>
-              Secure Inquiry
-            </p>
-            <div className='h-[1px] w-8 bg-blue-500' />
-          </div>
-        </div>
-      </form>
-    </div>
+    <form onSubmit={submit} className="space-y-3">
+      <input type="text" name="company" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
+      <label className="block space-y-1 text-sm font-medium text-slate-700">
+        <span>Full name</span>
+        <input name="name" autoComplete="name" required minLength={2} maxLength={120} className={fieldClass} />
+      </label>
+      <label className="block space-y-1 text-sm font-medium text-slate-700">
+        <span>Email</span>
+        <input name="email" type="email" autoComplete="email" required maxLength={180} className={fieldClass} />
+      </label>
+      <label className="block space-y-1 text-sm font-medium text-slate-700">
+        <span>Phone <span className="font-normal text-slate-500">(optional)</span></span>
+        <input name="phone" type="tel" autoComplete="tel" maxLength={40} className={fieldClass} />
+      </label>
+      <label className="block space-y-1 text-sm font-medium text-slate-700">
+        <span>{isShowing ? 'Preferred times or questions' : 'Your question'} <span className="font-normal text-slate-500">(optional)</span></span>
+        <textarea name="message" rows={3} minLength={5} maxLength={2000} className={`${fieldClass} resize-y`} />
+      </label>
+      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+      <button
+        type="submit"
+        disabled={status === 'sending'}
+        className="min-h-11 w-full rounded-lg bg-[#275e60] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1b4749] disabled:cursor-wait disabled:opacity-70"
+      >
+        {status === 'sending' ? 'Sending…' : isShowing ? 'Send showing request' : 'Send inquiry'}
+      </button>
+    </form>
   );
-};
-
-export default LeadCaptureForm;
+}

@@ -1,76 +1,57 @@
-import React from 'react';
-import { FaMapMarker, FaTimes } from 'react-icons/fa';
+import { Property } from '@/lib/types';
 
-interface PropertyHeaderProps {
-  property: any;
-}
+const dollars = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 0,
+});
 
-const PropertyHeader: React.FC<PropertyHeaderProps> = ({ property }) => {
+export default function PropertyHeader({ property, price }: { property: Property; price?: number }) {
+  const { location, listing_status } = property;
+  const locality = [location.city, location.state].filter(Boolean).join(', ');
+  const postalCity = [locality, location.zipcode].filter(Boolean).join(' ');
+  const address = [location.street, postalCity].filter(Boolean).join(', ');
   const isLease = property.price_type === 'lease';
-  const primaryPrice = isLease
-    ? (property.rates?.monthly || property.price)
-    : (property.list_price && property.list_price > 0) ? property.list_price : property.price;
-  const isCommercialSale = property.type === 'Commercial Sale';
+  const rentalRates = property.price_type !== 'sale' && !isLease
+    ? [
+        { label: 'Nightly', value: property.rates?.nightly ?? 0 },
+        { label: 'Weekly', value: property.rates?.weekly ?? 0 },
+        { label: 'Monthly', value: property.rates?.monthly ?? 0 },
+      ].filter(({ value }) => value > 0)
+    : [];
 
   return (
-    <div className='bg-slate-900 border border-white/10 p-8 rounded-2xl shadow-2xl text-center md:text-left overflow-hidden relative group transition-all duration-500 hover:border-blue-500/30'>
-      <div className='absolute -top-24 -left-24 w-48 h-48 bg-blue-600/5 blur-[100px] rounded-full' />
-      <div className='text-blue-400/70 text-[10px] font-black uppercase tracking-[0.3em] mb-4 italic'>
-        {property.type}{isCommercialSale && property.listing_status ? ` · ${property.listing_status}` : ''}
+    <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
+          <span>{property.type}</span>
+          {listing_status && (
+            <span className="rounded-full bg-[#dcefee] px-2.5 py-0.5 text-xs font-semibold text-[#245757]">
+              {listing_status}
+            </span>
+          )}
+        </div>
+        <h1 className="mt-2 break-words font-serif text-3xl !font-normal !not-italic !normal-case leading-tight text-slate-900 sm:text-4xl">
+          {property.name}
+        </h1>
+        {address && <p className="mt-2 text-sm leading-6 text-slate-600">{address}</p>}
       </div>
-      <h1 className='text-4xl font-black mb-6 text-white tracking-tighter italic uppercase'>{property.name}</h1>
-      <div className='text-slate-400 mb-8 flex align-middle justify-center md:justify-start items-center gap-2'>
-        <FaMapMarker className='text-lg text-blue-500' />
-        <p className='font-medium tracking-tight'>
-          {property.location.street}, {property.location.city}{' '}
-          {property.location.state}
-        </p>
-      </div>
-
-      <div className={isCommercialSale || isLease ? 'grid gap-6 sm:w-fit' : 'grid grid-cols-1 md:grid-cols-4 gap-6'}>
-        {primaryPrice > 0 && (
-          <div className='bg-slate-950/50 border border-blue-500/20 p-6 rounded-2xl transition-all hover:bg-slate-900'>
-            <div className='text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2'>{isLease ? 'Monthly Rent' : 'Sale Price'}</div>
-            <div className='text-3xl font-black text-white italic'>
-              ${primaryPrice.toLocaleString()}
+      {price !== undefined && (
+        <div>
+          <p className="text-sm font-medium text-slate-600">{isLease ? 'Monthly rent' : 'Listing price'}</p>
+          <p className="text-3xl font-semibold tabular-nums text-slate-900">{dollars.format(price)}</p>
+        </div>
+      )}
+      {rentalRates.length > 0 && (
+        <dl className="flex w-full flex-wrap gap-x-6 gap-y-2">
+          {rentalRates.map(({ label, value }) => (
+            <div key={label}>
+              <dt className="text-sm text-slate-600">{label}</dt>
+              <dd className="font-semibold tabular-nums text-slate-900">{dollars.format(value)}</dd>
             </div>
-          </div>
-        )}
-        {!isCommercialSale && !isLease && <>
-        <div className='bg-slate-950/50 border border-white/5 p-6 rounded-2xl transition-all hover:bg-slate-900'>
-          <div className='text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2'>Nightly</div>
-          <div className='text-3xl font-black text-blue-400 italic'>
-            {property.rates.nightly ? (
-              `$${property.rates.nightly.toLocaleString()}`
-            ) : (
-              <FaTimes className='text-red-900/50 mx-auto md:mx-0' />
-            )}
-          </div>
-        </div>
-        <div className='bg-slate-950/50 border border-white/5 p-6 rounded-2xl transition-all hover:bg-slate-900'>
-          <div className='text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2'>Weekly</div>
-          <div className='text-3xl font-black text-blue-400 italic'>
-            {property.rates.weekly ? (
-              `$${property.rates.weekly.toLocaleString()}`
-            ) : (
-              <FaTimes className='text-red-900/50 mx-auto md:mx-0' />
-            )}
-          </div>
-        </div>
-        <div className='bg-slate-950/50 border border-white/5 p-6 rounded-2xl transition-all hover:bg-slate-900'>
-          <div className='text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2'>Monthly</div>
-          <div className='text-3xl font-black text-blue-400 italic'>
-            {property.rates.monthly ? (
-              `$${property.rates.monthly.toLocaleString()}`
-            ) : (
-              <FaTimes className='text-red-900/50 mx-auto md:mx-0' />
-            )}
-          </div>
-        </div>
-        </>}
-      </div>
-    </div>
+          ))}
+        </dl>
+      )}
+    </header>
   );
-};
-
-export default PropertyHeader;
+}

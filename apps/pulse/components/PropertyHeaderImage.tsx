@@ -1,29 +1,17 @@
 import Image from 'next/image';
 import { isRemoteImageSource } from '@/lib/imageSource';
 
-interface PropertyHeaderImageProps {
-  image: string;
-}
-
-const PropertyHeaderImage: React.FC<PropertyHeaderImageProps> = ({ image }) => {
+export default function PropertyHeaderImage({ image, propertyName }: { image: string; propertyName: string }) {
   return (
-    <section>
-      <div className='container-xl m-auto'>
-        <div className='grid grid-cols-1'>
-          <Image
-            src={image}
-            unoptimized={isRemoteImageSource(image)}
-            alt='Property Header'
-            className='object-cover h-[400px] w-full'
-            width={0}
-            height={0}
-            sizes='100vw'
-            priority={true}
-          />
-        </div>
-      </div>
-    </section>
+    <Image
+      src={image}
+      alt={`Listing image for ${propertyName}`}
+      unoptimized={isRemoteImageSource(image)}
+      width={1280}
+      height={800}
+      sizes="(min-width: 1280px) 850px, (min-width: 1024px) 62vw, 100vw"
+      className="aspect-[16/10] w-full rounded-2xl bg-slate-100 object-cover"
+      priority
+    />
   );
-};
-
-export default PropertyHeaderImage;
+}

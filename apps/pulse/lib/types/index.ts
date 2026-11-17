@@ -53,9 +53,13 @@ export interface Property {
   rv_length?: number;
   hookups?: {
     electric: string;
+    water?: boolean;
+    sewer?: boolean;
   };
   listing_brokerage?: string;
   mls_number?: string;
+  mls_id?: string;
+  listing_status?: string;
 }
 export interface Lead {
   _id: string;
