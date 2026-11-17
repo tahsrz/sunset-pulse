@@ -150,21 +150,27 @@ export default function HomePropertySlideshow({ slides }: { slides: HomeProperty
         {slide ? (
           <>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
-            <div className="relative flex w-full min-w-0 flex-col items-start p-4 sm:p-6" aria-live={playing ? 'off' : 'polite'} aria-atomic="true">
+            <Link
+              href={slide.href}
+              aria-label={slide.name}
+              aria-live={playing ? 'off' : 'polite'}
+              aria-atomic="true"
+              className="group relative flex w-full min-w-0 flex-col items-start p-4 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white sm:p-6"
+            >
               {slide.price != null && slide.price > 0 ? (
                 <p className="mb-5 rounded-md bg-slate-950/90 px-3 py-1.5 text-lg font-bold tabular-nums text-white">
                   <span className="sr-only">{slide.monthly ? 'Monthly rent ' : 'Listing price '}</span>{dollarPrice.format(slide.price)}{slide.monthly ? '/mo' : ''}
                 </p>
               ) : null}
               <div className="mt-auto">
-                <Link href={slide.href} className="inline-block max-w-full break-words rounded font-bold text-white hover:underline sm:text-lg">
+                <span className="inline-block max-w-full break-words font-bold text-white group-hover:underline group-focus-visible:underline sm:text-lg">
                   {slide.name}
-                </Link>
+                </span>
                 {slide.locality ? <p className="mt-0.5 text-sm text-slate-200">{slide.locality}</p> : null}
                 {slide.rendering ? <p className="mt-1 text-xs text-slate-300">Exterior rendering</p> : null}
                 {slide.credit ? <p className="mt-1 text-xs text-slate-300">{slide.credit}</p> : null}
               </div>
-            </div>
+            </Link>
           </>
         ) : null}
       </div>

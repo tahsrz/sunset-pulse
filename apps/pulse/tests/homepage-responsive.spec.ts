@@ -131,7 +131,7 @@ test('homepage slideshow skips a listing whose photo fails to load', async ({ pa
   await expect(slideshow.getByRole('button', { name: 'Next property' })).toHaveCount(0);
 });
 
-test('featured commercial sales are active catalog listings with public detail routes', async ({ page, request }) => {
+test('featured commercial sale photos open their public listing details', async ({ page, request }) => {
   const listings = [
     { id: '21436749', name: '11250 West Lake Road', price: 175000 },
     { id: '21436841', name: '416 E Kennedale Parkway', price: 1050000 },
@@ -144,10 +144,16 @@ test('featured commercial sales are active catalog listings with public detail r
     });
   }
 
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  const listingLink = page.getByRole('region', { name: 'Featured properties' }).getByRole('link', { name: listings[0].name });
+  const slideshow = page.getByRole('region', { name: 'Featured properties' });
+  const listingLink = slideshow.getByRole('link', { name: listings[0].name });
   await expect(listingLink).toHaveAttribute('href', `/properties/${listings[0].id}`);
-  await listingLink.click();
+  const photo = slideshow.getByRole('img', { name: `Photo of ${listings[0].name}` });
+  await photo.scrollIntoViewIfNeeded();
+  const photoBounds = await photo.boundingBox();
+  if (!photoBounds) throw new Error('The slideshow photo is not visible.');
+  await page.mouse.click(photoBounds.x + photoBounds.width / 2, photoBounds.y + photoBounds.height / 2);
   await expect(page).toHaveURL(`/properties/${listings[0].id}`, { timeout: 20000 });
   await expect(page.getByRole('heading', { name: listings[0].name })).toBeVisible();
 });
