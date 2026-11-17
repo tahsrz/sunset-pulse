@@ -8,7 +8,7 @@ const moveOptions = {
   both: {
     label: 'Buy & Sell',
     title: 'Move fast with a Pulse agent.',
-    subtitle: "We've helped 1000+ customers sell their home without the stress.",
+    subtitle: 'We help you sell your home without the stress.',
     blurb: 'Start with your current address so we can help you plan both moves.',
     fieldLabel: 'Your home address',
     placeholder: 'Your current address',
@@ -99,6 +99,17 @@ export default function HomeMoveTabs({ sellerPlanHref }: { sellerPlanHref: strin
         <p className="mt-4 max-w-lg text-base leading-7 text-[#36455a] sm:text-lg">
           {activeOption.subtitle}
         </p>
+        {activeTab === 'both' ? (
+          <div className="mt-3 max-w-lg text-sm leading-6 text-[#36455a]">
+            <p>NTREIS recorded <strong>116,736 closed sales</strong> and <strong>194,470 new listings</strong> in 2025.</p>
+            <p>
+              <a className="font-medium underline underline-offset-2" href="https://texassecuretitle.com/wp-content/uploads/2026/01/NTREIS_MMI_2025-12-.pdf">
+                NTREIS 2025 market report
+              </a>
+              {' · Checked November 2026'}
+            </p>
+          </div>
+        ) : null}
       </div>
       <div role="tablist" aria-label="Buy or sell a home" className="mt-8 grid grid-cols-3 gap-1.5 sm:mt-10">
         {tabOrder.map((intent) => (

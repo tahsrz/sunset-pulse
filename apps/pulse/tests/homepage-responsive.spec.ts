@@ -17,7 +17,8 @@ test('homepage defers the Atlas bundle and stays usable across viewport widths',
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
     await expect(page.getByRole('heading', { name: 'Move fast with a Pulse agent.' })).toBeVisible();
-    await expect(page.getByText("We've helped 1000+ customers sell their home without the stress.")).toBeVisible();
+    await expect(page.getByText('We help you sell your home without the stress.')).toBeVisible();
+    await expect(page.getByText('NTREIS recorded 116,736 closed sales and 194,470 new listings in 2025.')).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Your home address' })).toBeVisible();
     await expect(page.getByRole('figure', { name: 'Example Property Layout' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Request My Free Seller Plan' })).toHaveCount(0);
@@ -62,7 +63,9 @@ test('homepage tabs update the title, subtitle and form before searching homes',
   const heading = page.locator('#seller-acquisition-title').filter({ visible: true });
   await expect(bothTab).toHaveAttribute('aria-selected', 'true');
   await expect(heading).toHaveText('Move fast with a Pulse agent.');
-  await expect(page.getByText("We've helped 1000+ customers sell their home without the stress.", { exact: true }).filter({ visible: true })).toBeVisible();
+  await expect(page.getByText('We help you sell your home without the stress.', { exact: true })).toBeVisible();
+  const marketReport = page.getByRole('link', { name: 'NTREIS 2025 market report' });
+  await expect(marketReport).toHaveAttribute('href', 'https://texassecuretitle.com/wp-content/uploads/2026/01/NTREIS_MMI_2025-12-.pdf');
   await expect(page.getByRole('tabpanel', { name: 'Buy & Sell' })).toContainText('help you plan both moves');
 
   await bothTab.focus();
@@ -71,6 +74,7 @@ test('homepage tabs update the title, subtitle and form before searching homes',
   await expect(buyTab).toHaveAttribute('aria-selected', 'true');
   await expect(heading).toHaveText('Find a place that feels like home.');
   await expect(page.getByText('A local Pulse agent can guide you from your first tour through closing.', { exact: true })).toBeVisible();
+  await expect(marketReport).toBeHidden();
   await expect(page.getByRole('tabpanel', { name: 'Buy a home' })).toContainText('Tell us where you’d like to buy');
 
   await buyTab.press('ArrowRight');
