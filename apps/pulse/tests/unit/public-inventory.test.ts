@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { projectPublicListing, publicListingSchema } from '@/lib/data/publicInventory';
+import { projectPublicListing, projectPublicListingDetail, publicListingSchema } from '@/lib/data/publicInventory';
 import { normalizeListing } from '@/lib/data/listingContract';
 
 function listing() {
@@ -41,5 +41,33 @@ describe('public inventory projection', () => {
     const input = listing();
     expect(() => projectPublicListing({ ...input, is_demo: true })).toThrow();
     expect(() => projectPublicListing({ ...input, display_public: false })).toThrow();
+  });
+
+  it('extends the detail response with validated public facts while leaving inventory cards compact', () => {
+    const original = listing();
+    const input = {
+      ...original,
+      metadata: {
+        ...original.metadata,
+        property_subtype: ' Single Family Residence ',
+        subdivision: 'Hillstead',
+        lot_size_sqft: 6000,
+        lot_size_acres: 0.138,
+        year_built: 2026,
+        levels: '',
+        builder: { private_notes: 'never return this' },
+      },
+    };
+    const detail = projectPublicListingDetail(input);
+
+    expect(detail.facts).toEqual({
+      property_subtype: 'Single Family Residence', subdivision: 'Hillstead',
+      lot_size_sqft: 6000, lot_size_acres: 0.138, year_built: 2026,
+    });
+    expect(detail).not.toHaveProperty('metadata');
+    expect(detail).not.toHaveProperty('owner');
+    expect(publicListingSchema.safeParse(detail).success).toBe(true);
+    expect(projectPublicListing(input)).not.toHaveProperty('facts');
+    expect(projectPublicListingDetail(original)).not.toHaveProperty('facts');
   });
 });

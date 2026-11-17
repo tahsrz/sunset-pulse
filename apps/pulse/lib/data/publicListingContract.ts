@@ -12,6 +12,21 @@ const publicGeoSchema = z.object({
   coordinates: z.tuple([z.number(), z.number()]),
 }).strict();
 
+const factText = z.string().trim().min(1).max(120).optional();
+
+export const publicListingFactsSchema = z.object({
+  property_subtype: factText,
+  subdivision: factText,
+  builder: factText,
+  levels: factText,
+  lot_dimensions: factText,
+  year_built: z.number().int().min(1600).max(2200).optional(),
+  lot_size_sqft: z.number().int().positive().max(1_000_000_000).optional(),
+  lot_size_acres: z.number().positive().max(1_000_000).optional(),
+}).strict();
+
+export type PublicListingFacts = z.infer<typeof publicListingFactsSchema>;
+
 /** Compatibility-shaped public record with no private owner or metadata fields. */
 export const publicListingSchema = z.object({
   id: z.string(),
@@ -42,6 +57,7 @@ export const publicListingSchema = z.object({
   is_demo: z.literal(false),
   is_featured: z.boolean(),
   display_public: z.literal(true),
+  facts: publicListingFactsSchema.optional(),
 }).strict();
 
 export type PublicListing = z.infer<typeof publicListingSchema>;

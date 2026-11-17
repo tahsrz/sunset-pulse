@@ -1,18 +1,17 @@
 import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import BookmarkButton from './BookmarkButton';
 import BookingForm from './BookingForm';
 import DraftOfferButton from './contracts/DraftOfferButton';
 import PropertyHeaderImage from './PropertyHeaderImage';
 import PropertyImages from './PropertyImages';
+import PropertyAnalysis from './property/PropertyAnalysis';
 import PropertyHeader from './property/PropertyHeader';
 import PropertySidebarForms from './property/PropertySidebarForms';
 import PropertySpecs from './property/PropertySpecs';
 import RecommendedProperties from './property/RecommendedProperties';
 import ShareButtons from './ShareButtons';
 import type { Property } from '@/lib/types';
-
-const unitPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 export default function PropertyDetails({ property, propertyId }: { property: Property; propertyId: string }) {
   const isShortTerm = property.type === 'RV' || property.type === 'RV Park';
@@ -21,15 +20,6 @@ export default function PropertyDetails({ property, propertyId }: { property: Pr
     ? [property.rates?.monthly, property.price, property.list_price]
     : [property.list_price, property.price]
   ).find((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0);
-  const area = property.square_feet ?? 0;
-  const pricePerFoot = price !== undefined && area > 0 && !isShortTerm ? price / area : null;
-  const mlsId = property.mls_id || property.mls_number;
-  const mapHref = property.location.street && property.location.city
-    ? 'https://www.google.com/maps/search/?' + new URLSearchParams({
-        api: '1',
-        query: [property.location.street, property.location.city, property.location.state, property.location.zipcode].filter(Boolean).join(', '),
-      })
-    : null;
   const photos = property.images.filter(Boolean);
 
   return (
@@ -62,38 +52,7 @@ export default function PropertyDetails({ property, propertyId }: { property: Pr
             </div>
           </div>
           <div className="min-w-0 space-y-5 lg:col-start-1 lg:row-start-2">
-            {(pricePerFoot !== null || mlsId || mapHref) && (
-              <section aria-labelledby="property-analysis-heading" className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-                <h2 id="property-analysis-heading" className="text-xl font-semibold !not-italic !normal-case text-slate-900">Property analysis</h2>
-                {(pricePerFoot !== null || mlsId) && (
-                  <dl className="mt-4 flex flex-wrap gap-x-10 gap-y-4">
-                    {pricePerFoot !== null && (
-                      <div>
-                        <dt className="text-sm text-slate-600">{isLease ? 'Monthly rent per sq ft' : 'Price per sq ft'}</dt>
-                        <dd className="mt-0.5 text-lg font-semibold tabular-nums">{unitPrice.format(pricePerFoot)}</dd>
-                      </div>
-                    )}
-                    {mlsId && (
-                      <div>
-                        <dt className="text-sm text-slate-600">MLS ID</dt>
-                        <dd className="mt-0.5 break-all text-lg font-semibold">{mlsId}</dd>
-                      </div>
-                    )}
-                  </dl>
-                )}
-                {pricePerFoot !== null && (
-                  <details className="mt-4 text-sm text-slate-600">
-                    <summary className="cursor-pointer font-medium text-[#275e60]">How this is calculated</summary>
-                    <p className="mt-2">{isLease ? 'Monthly asking rent' : 'Asking price'} divided by the square footage reported in the listing.</p>
-                  </details>
-                )}
-                {mapHref && (
-                  <a href={mapHref} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1.5 font-semibold text-[#275e60] hover:underline">
-                    View on Google Maps <ArrowUpRight size={16} aria-hidden="true" />
-                  </a>
-                )}
-              </section>
-            )}
+            <PropertyAnalysis key={propertyId} property={property} price={isShortTerm ? undefined : price} />
             {photos.length > 1 && (
               <section aria-labelledby="listing-photos-heading" className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
                 <h2 id="listing-photos-heading" className="mb-4 text-xl font-semibold !not-italic !normal-case text-slate-900">Listing photos</h2>

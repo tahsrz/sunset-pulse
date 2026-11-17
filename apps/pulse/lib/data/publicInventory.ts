@@ -1,6 +1,6 @@
 import { searchListings } from './listingRepository';
 import type { Listing } from './listingContract';
-import { publicListingSchema, type PublicListing } from './publicListingContract';
+import { publicListingFactsSchema, publicListingSchema, type PublicListing } from './publicListingContract';
 export { publicListingSchema, type PublicListing } from './publicListingContract';
 
 const HISTORICAL_STATUSES = ['Sold', 'Closed', 'S'] as const;
@@ -56,4 +56,16 @@ export function projectPublicListing(listing: Listing): PublicListing {
     is_featured: listing.is_featured,
     display_public: true,
   });
+}
+
+export function projectPublicListingDetail(listing: Listing): PublicListing {
+  const result = projectPublicListing(listing);
+  const facts = Object.entries(publicListingFactsSchema.shape).flatMap(([key, field]) => {
+    const parsed = field.safeParse(listing.metadata[key]);
+    return parsed.success && parsed.data !== undefined ? [[key, parsed.data] as const] : [];
+  });
+
+  return facts.length > 0
+    ? { ...result, facts: publicListingFactsSchema.parse(Object.fromEntries(facts)) }
+    : result;
 }

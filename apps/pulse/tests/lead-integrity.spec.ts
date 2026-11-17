@@ -16,9 +16,18 @@ test('listing details show the asking price and analysis without empty panels', 
   const analysis = layout.getByRole('region', { name: 'Property analysis' });
   await expect(analysis.getByText('$109.38', { exact: true })).toBeVisible();
   await expect(analysis.getByText('21436749', { exact: true })).toBeVisible();
+  await expect(analysis.getByText('1983', { exact: true })).toBeVisible();
+  await expect(analysis.getByText('0.88 acres', { exact: true })).toBeVisible();
   await analysis.getByText('How this is calculated', { exact: true }).click();
   await expect(analysis.getByText('Asking price divided by the square footage reported in the listing.')).toBeVisible();
   await expect(analysis.getByRole('link', { name: 'View on Google Maps' })).toHaveAttribute('href', /11250\+West\+Lake\+Road/);
+  await analysis.getByText('Compare a price', { exact: true }).click();
+  const comparison = analysis.getByRole('spinbutton', { name: 'Comparison price ($)' });
+  await comparison.fill('160000');
+  await expect(analysis.getByText('$15,000 (8.6%) below the asking price.', { exact: true })).toBeVisible();
+  await expect(analysis.getByText('$100.00 per sq ft.', { exact: true })).toBeVisible();
+  await comparison.fill('175000');
+  await expect(analysis.getByText('Matches the asking price.', { exact: true })).toBeVisible();
   await expect(layout.getByText(/^(Nightly|Weekly|Monthly)$/i)).toHaveCount(0);
   await expect(layout.getByText(/Sunset Render Engine|Interactive Property Analysis/)).toHaveCount(0);
   await expect(layout.getByRole('heading', { name: /amenities/i })).toHaveCount(0);
