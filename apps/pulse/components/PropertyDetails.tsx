@@ -11,10 +11,15 @@ import PropertySidebarForms from './property/PropertySidebarForms';
 import PropertySpecs from './property/PropertySpecs';
 import RecommendedProperties from './property/RecommendedProperties';
 import ShareButtons from './ShareButtons';
+import { kellerHicksListingId, kellerHicksLandDetails } from '@/config/keller_hicks';
 import type { Property } from '@/lib/types';
+import PropertyLandDetails from './property/PropertyLandDetails';
 
 export default function PropertyDetails({ property, propertyId }: { property: Property; propertyId: string }) {
   const isShortTerm = property.type === 'RV' || property.type === 'RV Park';
+  const isLand = property.type === 'Land';
+  const canAskAboutLand = isLand && property.listing_status === 'Active';
+  const isKellerHicks = propertyId === kellerHicksListingId;
   const isLease = property.price_type === 'lease';
   const price = (isLease
     ? [property.rates?.monthly, property.price, property.list_price]
@@ -31,20 +36,28 @@ export default function PropertyDetails({ property, propertyId }: { property: Pr
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,23rem)] lg:grid-rows-[auto_1fr] lg:gap-x-8">
           <div className="min-w-0 space-y-5 lg:col-start-1 lg:row-start-1">
             <PropertyHeader property={property} price={price} />
+            {canAskAboutLand && (
+              <a href="#property-inquiry" className="inline-flex min-h-11 items-center rounded-lg bg-[#275e60] px-4 py-2 font-semibold text-white hover:bg-[#1b4749]">
+                Ask about this property
+              </a>
+            )}
             {photos[0] && <PropertyHeaderImage image={photos[0]} propertyName={property.name} />}
             <PropertySpecs property={property} />
+            {isLand && <PropertyLandDetails details={property.facts?.land_details ?? (isKellerHicks ? kellerHicksLandDetails : undefined)} />}
           </div>
           <div className="contents lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:block lg:space-y-5">
-            <aside aria-label="Listing contact" className="min-w-0">
-              {isShortTerm ? (
-                <BookingForm property={property} />
-              ) : (
-                <PropertySidebarForms key={propertyId} propertyId={propertyId} propertyName={property.name} />
-              )}
-            </aside>
+            {(!isLand || canAskAboutLand) && (
+              <aside id="property-inquiry" aria-label="Listing contact" tabIndex={-1} className="min-w-0 scroll-mt-24">
+                {isShortTerm ? (
+                  <BookingForm property={property} />
+                ) : (
+                  <PropertySidebarForms key={propertyId} propertyId={propertyId} propertyName={property.name} />
+                )}
+              </aside>
+            )}
             <div className="order-last min-w-0 space-y-5 lg:order-none">
               <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
-                {!isShortTerm && !isLease && <DraftOfferButton property={property} />}
+                {!isShortTerm && !isLease && !isLand && <DraftOfferButton property={property} />}
                 <BookmarkButton property={property} />
                 <ShareButtons property={property} />
               </div>

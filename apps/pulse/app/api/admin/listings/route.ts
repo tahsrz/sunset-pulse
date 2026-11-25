@@ -64,6 +64,8 @@ export async function PUT(request: NextRequest) {
     const listing = await upsertCanonicalListing(buildEditedListing(fields, [...new Set(images)], stored?.listing));
     revalidatePath('/');
     revalidatePath('/api/properties');
+    revalidatePath(`/properties/${listing.id}`);
+    if (listing.mls_id) revalidatePath(`/properties/${listing.mls_id}`);
     return successResponse(listingEditorValues(listing), stored ? 200 : 201);
   } catch {
     return errorResponse('Unable to save the listing.');

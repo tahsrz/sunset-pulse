@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { landDetailsSchema } from './landDetails';
 
 const publicLocationSchema = z.object({
   street: z.string(),
@@ -15,6 +16,7 @@ const publicGeoSchema = z.object({
 const factText = z.string().trim().min(1).max(120).optional();
 
 export const publicListingFactsSchema = z.object({
+  land_details: landDetailsSchema.optional(),
   property_subtype: factText,
   subdivision: factText,
   builder: factText,
