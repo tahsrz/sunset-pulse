@@ -26,7 +26,7 @@ test('mobile land inquiry includes the property and keeps the question on retry'
   await page.getByRole('link', { name: 'Ask about this property' }).click();
   await expect(page).toHaveURL(/#property-inquiry$/);
   const form = page.locator('#property-inquiry');
-  await form.getByLabel('Name', { exact: true }).fill('Test Buyer');
+  await form.getByLabel('Full name', { exact: true }).fill('Test Buyer');
   await form.getByLabel('Email', { exact: true }).fill('buyer@example.com');
   await form.getByLabel('Your question').fill('Is the concept plan available?');
   await form.getByRole('button', { name: 'Send inquiry' }).click();
