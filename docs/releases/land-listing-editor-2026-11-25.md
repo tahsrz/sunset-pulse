@@ -25,6 +25,7 @@ The browser walkthrough also exposed an existing edit bug: canonical storage rep
 - Chromium: existing priced-listing publication to the homepage slideshow passed.
 - Chromium: Keller Hicks mobile inquiry and retry scenario passed.
 - Inspected the mobile review screenshot; public and review screenshots use synthetic property data.
+- The existing CI browser steps now include both new land-editor viewport scenarios and the Keller Hicks inquiry regression; land screenshots are included in the existing artifact upload.
 
 Browser persistence tests used the local mock catalog. Unit tests mocked repository writes and operator authorization responses. These checks do not establish hosted database persistence or live operator permissions. Ancillary visitor-event requests in the local walkthrough reported invalid placeholder API credentials; the listing save/read flow used the mock repository and passed.
 
