@@ -11,8 +11,9 @@ import PropertySidebarForms from './property/PropertySidebarForms';
 import PropertySpecs from './property/PropertySpecs';
 import RecommendedProperties from './property/RecommendedProperties';
 import ShareButtons from './ShareButtons';
-import { kellerHicksListingId, kellerHicksZoningPacket } from '@/config/keller_hicks';
+import { kellerHicksListingId, kellerHicksLandDetails } from '@/config/keller_hicks';
 import type { Property } from '@/lib/types';
+import PropertyLandDetails from './property/PropertyLandDetails';
 
 export default function PropertyDetails({ property, propertyId }: { property: Property; propertyId: string }) {
   const isShortTerm = property.type === 'RV' || property.type === 'RV Park';
@@ -42,15 +43,7 @@ export default function PropertyDetails({ property, propertyId }: { property: Pr
             )}
             {photos[0] && <PropertyHeaderImage image={photos[0]} propertyName={property.name} />}
             <PropertySpecs property={property} />
-            {isKellerHicks && (
-              <section aria-labelledby="development-details" className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 text-slate-700 sm:p-6">
-                <h2 id="development-details" className="text-xl font-semibold text-slate-900">Land and development details</h2>
-                <p>Approximately 5 acres as marketed. The August 2024 survey shows 4.866 acres and about 304 feet of Keller Hicks Road frontage.</p>
-                <p>Fort Worth approved A-7.5 One-Family Residential zoning. The July 2025 concept illustrates eight single-family homesites and three open-space lots, subject to applicable approvals. Recorded plat status has not been verified.</p>
-                <p>The concept maps a floodplain across part of the tract. The survey shows a gas pipeline marker near the frontage.</p>
-                <a href={kellerHicksZoningPacket} className="inline-block font-semibold text-[#275e60] underline">View the city zoning packet, survey and concept plan</a>
-              </section>
-            )}
+            {isLand && <PropertyLandDetails details={property.facts?.land_details ?? (isKellerHicks ? kellerHicksLandDetails : undefined)} />}
           </div>
           <div className="contents lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:block lg:space-y-5">
             {(!isLand || canAskAboutLand) && (

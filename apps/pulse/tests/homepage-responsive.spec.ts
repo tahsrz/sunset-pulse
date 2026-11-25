@@ -172,7 +172,8 @@ test('an operator can publish a priced listing to the homepage slideshow', async
   await page.getByLabel('Living area (sq ft)').fill('3403');
   await page.getByLabel('Photo URLs (one per line)').fill('/images/properties/817-stoney-bridge-way-preview.png\n/images/properties/817-stoney-bridge-way.png');
   await page.getByLabel('Publish to the public catalog').check();
-  await page.getByRole('button', { name: 'Save listing' }).click();
+  await page.getByRole('button', { name: 'Review listing', exact: true }).click();
+  await page.getByRole('button', { name: 'Save reviewed listing' }).click();
   await expect(page.getByText('Listing saved.', { exact: true })).toBeVisible();
 
   const response = await request.get('/api/properties/21436577');

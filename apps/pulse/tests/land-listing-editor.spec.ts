@@ -1,0 +1,66 @@
+import { expect, test } from '@playwright/test';
+import { landEditorInput, landFacts } from './fixtures/landListing';
+
+for (const width of [390, 1440]) {
+  test(`land editor reviews, saves, publishes and reloads public facts at ${width}px`, async ({ page, request }, testInfo) => {
+    test.skip(process.env.PULSE_LISTING_EDITOR_E2E !== 'true', 'Uses a local development server and isolated mock inventory.');
+    test.setTimeout(180_000);
+    const mlsId = `LAND-E2E-${width}`;
+    const writes: string[] = [];
+    page.on('request', (outbound) => {
+      if (outbound.url().includes('/api/admin/listings') && outbound.method() === 'PUT') writes.push(outbound.method());
+    });
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/admin/listings', { waitUntil: 'domcontentloaded', timeout: 90_000 });
+    await page.getByLabel('MLS ID', { exact: true }).fill(mlsId);
+    await page.getByLabel('Street address').fill(landEditorInput.street);
+    await page.getByLabel('City', { exact: true }).fill(landEditorInput.city);
+    await page.getByLabel('ZIP code').fill(landEditorInput.zip);
+    await page.getByLabel('Property type', { exact: true }).fill('Land');
+    await page.getByLabel('Listing price ($)').fill(landEditorInput.price);
+    await page.getByLabel('Marketed acreage (acres)').fill('5');
+    await page.getByLabel('Surveyed acreage (acres)').fill('4.8');
+    await page.getByLabel('Zoning and source').fill(landEditorInput.land_zoning);
+    await page.getByLabel('Development status and approvals').fill(landEditorInput.land_development_status);
+    await page.getByLabel('Constraints and due diligence').fill(landEditorInput.land_constraints);
+    await page.getByLabel('Supporting documents (one per line, up to 8)').fill(landEditorInput.land_documents);
+    await page.getByRole('button', { name: 'Review listing', exact: true }).click();
+    const review = page.getByRole('region', { name: 'Review listing before saving' });
+    await expect(review).toContainText('4.8 acres');
+    expect(writes).toHaveLength(0);
+    await page.getByLabel('Surveyed acreage (acres)').fill('4.866');
+    await expect(review).toHaveCount(0);
+    await page.getByRole('button', { name: 'Review listing', exact: true }).click();
+    await expect(review).toContainText('4.866 acres');
+    await expect(review).toContainText('private listing');
+    await review.screenshot({ path: testInfo.outputPath(`land-review-${width}.png`) });
+    await page.getByRole('button', { name: 'Save reviewed listing' }).click();
+    await expect(page.getByText('Listing saved.', { exact: true })).toBeVisible({ timeout: 30_000 });
+    expect(writes).toHaveLength(1);
+    expect((await request.get(`/api/properties/${mlsId}`)).status()).toBe(404);
+    await page.getByLabel('Publish to the public catalog').check();
+    await page.getByRole('button', { name: 'Review listing', exact: true }).click();
+    await expect(review).toContainText('published to the public catalog');
+    await page.getByRole('button', { name: 'Save reviewed listing' }).click();
+    await expect(page.getByText('Listing saved.', { exact: true })).toBeVisible({ timeout: 30_000 });
+    expect(writes).toHaveLength(2);
+    const response = await request.get(`/api/properties/${mlsId}`);
+    expect(response.ok()).toBe(true);
+    const detail = (await response.json()).data;
+    expect(detail.facts.land_details).toEqual(landFacts);
+    expect(detail).not.toHaveProperty('metadata');
+    await page.goto(`/properties/${mlsId}`);
+    const publicLand = page.getByRole('region', { name: 'Land and development details' });
+    await expect(publicLand).toContainText('4.866 acres');
+    await expect(publicLand).toContainText('Plat approval has not been verified');
+    await expect(publicLand.getByRole('link', { name: 'City packet' })).toHaveAttribute('href', landFacts.documents[0].url);
+    await publicLand.screenshot({ path: testInfo.outputPath(`land-public-${width}.png`) });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.goto('/admin/listings');
+    await page.getByLabel('Look up by MLS ID').fill(mlsId);
+    await page.getByRole('button', { name: 'Load listing' }).click();
+    await expect(page.getByLabel('Surveyed acreage (acres)')).toHaveValue('4.866');
+    await expect(page.getByLabel('Supporting documents (one per line, up to 8)')).toHaveValue(landEditorInput.land_documents);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+}

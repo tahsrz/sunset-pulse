@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { isPublicListingPhoto, type Listing } from './listingContract';
+import { landDetailsSchema, landDocumentLinesSchema, type LandDetails } from './landDetails';
+import { kellerHicksListingId, kellerHicksLandDetails } from '@/config/keller_hicks';
 
 export const listingMlsIdSchema = z.string().trim().min(1).max(40).regex(/^[a-z0-9_-]+$/i);
 
@@ -37,6 +39,13 @@ export const listingEditorSchema = z.object({
   listing_agent: optionalText(120),
   listing_office: optionalText(120),
   description: optionalText(5000),
+  land_details_present: checkbox,
+  land_marketed_acres: optionalNumber(z.coerce.number().positive().max(1_000_000)),
+  land_surveyed_acres: optionalNumber(z.coerce.number().positive().max(1_000_000)),
+  land_zoning: optionalText(500),
+  land_development_status: optionalText(1500),
+  land_constraints: optionalText(1500),
+  land_documents: landDocumentLinesSchema,
   photo_kind: z.enum(['', 'rendering']).default(''),
   photo_urls: z.string().max(16000).default('').transform((value) => (
     [...new Set(value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean))]
@@ -52,9 +61,10 @@ const metadataFields = [
 
 export function listingEditorValues(listing: Listing) {
   const { mls_id, type, description, location, listing_status, price_type, list_price, price, beds, baths, square_feet, images, display_public, is_featured, metadata } = listing;
+  const land = landDetailsSchema.safeParse(metadata.land_details ?? (listing.id === kellerHicksListingId ? kellerHicksLandDetails : undefined));
   return {
     mls_id, type, description, ...location, zip: location.zipcode, listing_status, price_type,
-    price: list_price ?? price, beds, baths, sqft: square_feet,
+    price: list_price ?? price, beds, baths, sqft: square_feet && square_feet > 0 ? square_feet : '',
     photo_urls: images.filter(isPublicListingPhoto).join('\n'),
     display_public, is_featured,
     ...Object.fromEntries(metadataFields.map((key) => {
@@ -62,11 +72,18 @@ export function listingEditorValues(listing: Listing) {
       return [key, typeof value === 'string' || typeof value === 'number' ? value : ''];
     })),
     attached_garage: typeof metadata.attached_garage === 'boolean' ? (metadata.attached_garage ? 'yes' : 'no') : '',
+    land_marketed_acres: land.success ? land.data.marketed_acres ?? '' : '',
+    land_surveyed_acres: land.success ? land.data.surveyed_acres ?? '' : '',
+    land_zoning: land.success ? land.data.zoning ?? '' : '',
+    land_development_status: land.success ? land.data.development_status ?? '' : '',
+    land_constraints: land.success ? land.data.constraints ?? '' : '',
+    land_documents: land.success ? land.data.documents.map((document) => `${document.label} | ${document.url}`).join('\n') : '',
   };
 }
 
 export function buildEditedListing(fields: z.output<typeof listingEditorSchema>, images: string[], existing?: Listing) {
   const metadata = { ...existing?.metadata };
+  if (fields.land_details_present) metadata.land_details = landDetailsFromEditor(fields);
   for (const key of metadataFields) {
     const value = fields[key];
     if (value === undefined || value === '') delete metadata[key];
@@ -97,4 +114,15 @@ export function buildEditedListing(fields: z.output<typeof listingEditorSchema>,
     is_featured: fields.is_featured,
     metadata,
   };
+}
+
+export function landDetailsFromEditor(fields: z.output<typeof listingEditorSchema>): LandDetails {
+  return landDetailsSchema.parse({
+    marketed_acres: fields.land_marketed_acres,
+    surveyed_acres: fields.land_surveyed_acres,
+    zoning: fields.land_zoning || undefined,
+    development_status: fields.land_development_status || undefined,
+    constraints: fields.land_constraints || undefined,
+    documents: fields.land_documents,
+  });
 }

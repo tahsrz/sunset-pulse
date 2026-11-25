@@ -20,7 +20,7 @@ test('mobile land inquiry includes the property and keeps the question on retry'
   });
 
   await page.goto(`/properties/${kellerHicksListingId}`, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-  await expect(page.getByText(/survey shows 4.866 acres/)).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByText('4.866 acres', { exact: true })).toBeVisible({ timeout: 45_000 });
   await expect(page.getByRole('link', { name: /city zoning packet/ })).toBeVisible();
   await expect(page.getByText('Nightly', { exact: true })).toHaveCount(0);
   await page.getByRole('link', { name: 'Ask about this property' }).click();

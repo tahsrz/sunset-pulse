@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, type FormEvent } from 'react';
+import { landDetailsFromEditor, listingEditorSchema } from '@/lib/data/listingEditor';
+import PropertyLandDetails from '@/components/property/PropertyLandDetails';
+import type { z } from 'zod';
 
 type Values = Record<string, string | number | boolean | null | undefined>;
 type ListingResponse = { success?: boolean; data?: Values; message?: string };
@@ -16,9 +19,11 @@ export default function ListingEditor() {
   const [lookup, setLookup] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ text: string; error: boolean }>();
+  const [review, setReview] = useState<{ form: FormData; fields: z.output<typeof listingEditorSchema> }>();
   const value = (name: string, fallback = '') => String(values[name] ?? fallback);
 
   function resetForm(next: Values) {
+    setReview(undefined);
     setValues(next);
     setFormKey((key) => key + 1);
   }
@@ -44,7 +49,15 @@ export default function ListingEditor() {
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void send(endpoint, { method: 'PUT', body: new FormData(event.currentTarget) });
+    const form = new FormData(event.currentTarget);
+    const parsed = listingEditorSchema.safeParse(Object.fromEntries(form));
+    if (!parsed.success) {
+      setReview(undefined);
+      setNotice({ text: parsed.error.issues[0]?.message || 'Check the listing details.', error: true });
+      return;
+    }
+    setNotice(undefined);
+    setReview({ form, fields: parsed.data });
   }
 
   function textField(name: string, label: string, options: React.InputHTMLAttributes<HTMLInputElement> = {}) {
@@ -77,7 +90,7 @@ export default function ListingEditor() {
         }}>New listing</button>
       </form>
 
-      <form key={formKey} onSubmit={save} className="space-y-6 rounded-xl border border-slate-700 bg-slate-900 p-4 sm:p-6">
+      <form key={formKey} onSubmit={save} onChange={() => { setReview(undefined); setNotice(undefined); }} className="space-y-6 rounded-xl border border-slate-700 bg-slate-900 p-4 sm:p-6">
         <fieldset disabled={busy} className={row}>
           <legend className="mb-4 text-lg font-semibold">Listing details</legend>
           {textField('mls_id', 'MLS ID', { required: true, maxLength: 40 })}
@@ -128,6 +141,23 @@ export default function ListingEditor() {
           </label>
         </fieldset>
 
+        <fieldset disabled={busy} className={row}>
+          <legend className="mb-4 text-lg font-semibold">Land and development details</legend>
+          <input type="hidden" name="land_details_present" value="on" />
+          <p className="text-sm text-slate-300 sm:col-span-2">These details and document links are public on land listings. Distinguish concepts from approvals and include the source and date for verified facts.</p>
+          {textField('land_marketed_acres', 'Marketed acreage (acres)', { type: 'number', min: 0.000001, step: 'any', max: 1_000_000 })}
+          {textField('land_surveyed_acres', 'Surveyed acreage (acres)', { type: 'number', min: 0.000001, step: 'any', max: 1_000_000 })}
+          {([
+            ['land_zoning', 'Zoning and source', 500],
+            ['land_development_status', 'Development status and approvals', 1500],
+            ['land_constraints', 'Constraints and due diligence', 1500],
+          ] as const).map(([name, label, maxLength]) => <label key={name} className="block text-sm font-medium sm:col-span-2">{label}<textarea name={name} className={fieldClass} defaultValue={value(name)} maxLength={maxLength} rows={3} /></label>)}
+          <label className="block text-sm font-medium sm:col-span-2">Supporting documents (one per line, up to 8)
+            <textarea name="land_documents" className={fieldClass} defaultValue={value('land_documents')} rows={3} maxLength={18000} placeholder="City zoning packet | https://example.com/zoning.pdf" aria-describedby="land-document-help" />
+          </label>
+          <p id="land-document-help" className="text-sm text-slate-300 sm:col-span-2">Enter Label | HTTPS URL. Use documents approved for public sharing.</p>
+        </fieldset>
+
         <fieldset disabled={busy} className="space-y-4">
           <legend className="mb-4 text-lg font-semibold">Photos and publishing</legend>
           <label className="block text-sm font-medium">Photo URLs (one per line)
@@ -147,12 +177,22 @@ export default function ListingEditor() {
         </fieldset>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button type="submit" disabled={busy} className="min-h-11 rounded-lg bg-teal-300 px-5 font-bold text-slate-950 hover:bg-teal-200 disabled:opacity-50">Save listing</button>
+          <button type="submit" disabled={busy} className="min-h-11 rounded-lg bg-teal-300 px-5 font-bold text-slate-950 hover:bg-teal-200 disabled:opacity-50">Review listing</button>
           {notice ? <p role={notice.error ? 'alert' : 'status'} className={notice.error ? 'text-rose-200' : 'text-teal-100'}>{notice.text}</p> : null}
           {values.display_public === true && values.mls_id ? (
             <a href={`/properties/${encodeURIComponent(String(values.mls_id))}`} className="text-teal-200 underline underline-offset-4">View public listing</a>
           ) : null}
         </div>
+        {review && <section aria-label="Review listing before saving" className="space-y-4 rounded-xl border border-teal-300 p-4">
+          <h2 className="text-lg font-semibold">Review listing before saving</h2>
+          <p className="text-sm text-slate-300">This draft has not been saved. Changing any field requires a new review.</p>
+          <p className="break-words font-semibold">{review.fields.street}, {review.fields.city}, {review.fields.state} {review.fields.zip}</p>
+          <p>{review.fields.type} · {review.fields.listing_status} · {review.fields.price.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}{review.fields.price_type === 'lease' ? ' / month' : ''}</p>
+          <p>{review.fields.display_public ? 'Will be published to the public catalog.' : 'Will be saved as a private listing.'}</p>
+          {review.fields.description && <p className="whitespace-pre-line break-words">{review.fields.description}</p>}
+          {review.fields.type === 'Land' && <PropertyLandDetails details={landDetailsFromEditor(review.fields)} />}
+          <button type="button" disabled={busy} className="min-h-11 rounded-lg bg-teal-300 px-5 font-bold text-slate-950 hover:bg-teal-200 disabled:opacity-50" onClick={() => void send(endpoint, { method: 'PUT', body: review.form })}>Save reviewed listing</button>
+        </section>}
       </form>
     </div>
   );
