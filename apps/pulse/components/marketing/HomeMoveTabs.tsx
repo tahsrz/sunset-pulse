@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import React, { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { SELLER_ADDRESS_DRAFT_KEY } from '@/lib/marketing/sellerAddressDraft';
 
@@ -38,6 +38,8 @@ type MoveIntent = (typeof tabOrder)[number];
 
 export default function HomeMoveTabs({ sellerPlanHref }: { sellerPlanHref: string }) {
   const router = useRouter();
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => setIsReady(true), []);
   const [activeTab, setActiveTab] = useState<MoveIntent>('both');
   const activeOption = moveOptions[activeTab];
   const tabs = useRef<Partial<Record<MoveIntent, HTMLButtonElement>>>({});
@@ -87,7 +89,7 @@ export default function HomeMoveTabs({ sellerPlanHref }: { sellerPlanHref: strin
     } catch {
       // The consultation is still available when session storage is disabled.
     }
-    router.push(sellerPlanHref);
+    window.location.assign(sellerPlanHref);
   }
 
   return (
@@ -147,7 +149,7 @@ export default function HomeMoveTabs({ sellerPlanHref }: { sellerPlanHref: strin
                 onInput={(event) => event.currentTarget.setCustomValidity('')}
                 className="min-h-11 min-w-0 flex-1 rounded-sm border-0 bg-white px-2 text-base text-[#232c43] placeholder:text-[#65758a] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#3b6270] sm:px-3"
               />
-              <button type="submit" className="min-h-11 shrink-0 rounded bg-[#b9412d] px-3 text-sm font-bold text-white hover:bg-[#9d3526] focus-visible:!outline-[#3b6270] sm:px-4">
+              <button type="submit" disabled={!isReady} className="min-h-11 shrink-0 rounded bg-[#b9412d] px-3 text-sm font-bold text-white enabled:hover:bg-[#9d3526] disabled:opacity-70 focus-visible:!outline-[#3b6270] sm:px-4">
                 {option.action}
               </button>
             </form>

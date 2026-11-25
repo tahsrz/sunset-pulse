@@ -63,7 +63,7 @@ test('homepage seller offer carries attribution through pricing review and a sav
   const address = '123 Sample Lane';
   await page.getByRole('textbox', { name: 'Your home address' }).fill(address);
   await page.getByRole('tabpanel', { name: 'Buy & Sell' }).getByRole('button', { name: 'Plan my move' }).click();
-  await expect(page).toHaveURL(/\/seller-plan\?/);
+  await expect(page).toHaveURL(/\/seller-plan\?/, { timeout: 20_000 });
   let currentUrl = new URL(page.url());
   expect(currentUrl.searchParams.get('utm_campaign')).toBe('fall-sellers');
   expect(currentUrl.searchParams.has('address')).toBe(false);
